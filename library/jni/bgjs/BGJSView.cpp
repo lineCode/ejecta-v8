@@ -9,6 +9,14 @@
 #include "ClientAndroid.h"
 #endif
 
+/**
+ * BGJSView
+ * A v8 wrapper around a native window
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 
 // #define DEBUG_GL 1
 #undef DEBUG_GL

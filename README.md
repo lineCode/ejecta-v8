@@ -13,6 +13,8 @@ to support newer versions of v8, as many things have changed there (see TODO).
 
 You can download the sample app from Play Store: https://play.google.com/store/apps/details?id=ag.boersego.bgjs.sample
 
+Ejecta-v8 is published under the MIT Open Source License (http://opensource.org/licenses/mit-license.php), as is Ejecta.
+
 
 Building
 --------

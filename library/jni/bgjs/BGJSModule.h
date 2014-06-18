@@ -6,6 +6,14 @@
 #include "BGJSJavaWrapper.h"
 #include <string>
 
+/**
+ * BGJSModule
+ * Base class for an ejecta-v8 extension.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 class BGJSContext;
 
 class BGJSModule : public BGJSInfo, public BGJSClass {

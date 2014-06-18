@@ -7,6 +7,14 @@
 #include "BGJSContext.h"
 #include "os-detection.h"
 
+/**
+ * BGJSGLView
+ * Wrapper class around native windows that expose OpenGL operations
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 typedef struct __tagAnimationFrameRequest {
 	BGJSGLView *view;
 	v8::Persistent<v8::Object> callback;

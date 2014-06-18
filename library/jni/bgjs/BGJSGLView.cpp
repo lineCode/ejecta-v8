@@ -25,6 +25,14 @@
 
 using namespace v8;
 
+/**
+ * BGJSGLView
+ * Wrapper class around native windows that expose OpenGL operations
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 static void checkGlError(const char* op) {
 #ifdef DEBUG_GL
 	for (GLint error = glGetError(); error; error = glGetError()) {

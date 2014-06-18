@@ -19,6 +19,15 @@
 
 using namespace v8;
 
+/**
+ * BGJSCanvasContext
+ * Manages a JS Canvas object and its OpenGL state. Loosely based on EJCanvasContext
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
+
 static void checkGlError(const char* op) {
 #ifdef DEBUG_GL
 	for (GLint error = glGetError(); error; error = glGetError()) {

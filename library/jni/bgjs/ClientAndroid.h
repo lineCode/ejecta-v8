@@ -4,6 +4,14 @@
 #include <jni.h>
 #include "ClientAbstract.h"
 
+/**
+ * ClientAndroid
+ * The bridge between v8 and Android.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ */
+
 class ClientAndroid : public ClientAbstract {
 public:
 	JNIEnv* envCache;

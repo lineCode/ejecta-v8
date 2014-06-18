@@ -5,6 +5,14 @@
 #include <jni.h>
 #include <string>
 
+/**
+ * BGJSJavaWrapper
+ * Helper class to wrap v8 objects in Java objects
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 class BGJSJavaWrapper {
 	jclass _jStringClass;
 public:

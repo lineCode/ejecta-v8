@@ -10,6 +10,14 @@
 #include <jni.h>
 #include "GLcompat.h"
 
+/**
+ * BGJSView
+ * A v8 wrapper around a native window
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ */
+
 class BGJSView : public BGJSInfo, public BGJSClass {
 public:
 	BGJSView(BGJSContext* ctx);

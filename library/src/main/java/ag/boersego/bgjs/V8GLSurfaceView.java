@@ -52,22 +52,11 @@ import javax.microedition.khronos.opengles.GL10;
 
 
 /**
- * A simple GLSurfaceView sub-class that demonstrate how to perform
- * OpenGL ES 2.0 rendering into a GL Surface. Note the following important
- * details:
+ * V8GLSurfaceView
+ * A pre-HC variant of IV8GL. This utilizes a GLSurfaceView to set up the OpenGL context and manage it. You should use V8TextureView whenever possible instead of this.
  *
- * - The class must use a custom context factory to enable 2.0 rendering.
- *   See ContextFactory class definition below.
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
  *
- * - The class must use a custom EGLConfigChooser to be able to select
- *   an EGLConfig that supports 2.0. This is done by providing a config
- *   specification to eglChooseConfig() that has the attribute
- *   EGL10.ELG_RENDERABLE_TYPE containing the EGL_OPENGL_ES2_BIT flag
- *   set. See ConfigChooser class definition below.
- *
- * - The class must select the surface's format, then choose an EGLConfig
- *   that matches it exactly (with regards to red/green/blue/alpha channels
- *   bit depths). Failure to do so would result in an EGL_BAD_MATCH error.
  */
 abstract public class V8GLSurfaceView extends GLSurfaceView implements IV8GL {
 	

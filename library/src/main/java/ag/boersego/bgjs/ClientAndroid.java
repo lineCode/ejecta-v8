@@ -2,6 +2,14 @@ package ag.boersego.bgjs;
 
 import android.content.res.AssetManager;
 
+/**
+ * ClientAndroid.java
+ * This is the declaration of all native methods.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ **/
+
 public class ClientAndroid {
 	// BGJSContext
 	public static native void timeoutCB(long ctxPtr, long jsCb, long thisObj, boolean cleanup, boolean runCallback);
