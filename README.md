@@ -3,7 +3,9 @@ ejecta-v8
 
 This is a port of @phoboslabs EjectaJS to C++ which uses v8 instead of JavaScriptCore.
 Think of it as a simple browser. It only offers Canvas and a simple AJAX interface in Javascript,
-but it is super fast and embeddable. No HTML, DOM or CSS is included - it is for JS only.
+but it is super fast and embeddable. No HTML, DOM or CSS is included - it is for JS only. More information
+on the topic can be seen in the slides of a presentation we held a while back here:
+http://www.slideshare.net/KevinRead3/presentation-tng
 
 The original (non-JIT, iOS-only) code can be found at https://github.com/phoboslab/ejecta.
 This port focuses on Android for now but could easily run on all OS that support OpenGL or OpenGL ES.
