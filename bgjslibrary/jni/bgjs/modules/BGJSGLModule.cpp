@@ -917,7 +917,7 @@ Handle<Value> BGJSGLModule::js_canvas_getContext(const Arguments& args) {
 	BGJSContext2dGL *context2d = new BGJSContext2dGL();
 	Local<Object> jsObj = BGJSGLModule::g_classRefContext2dGL->NewInstance();
 	context2d->_jsValue = Persistent<Object>::New(jsObj);
-	context2d->_jsValue.MakeWeak(NULL, BGJSGLModule::js_context_destruct);
+	context2d->_jsValue.MakeWeak(reinterpret_cast<void*>(context2d), &js_context_destruct);
 	context2d->context = canvas->_view->context2d;
 	jsObj->SetInternalField(0, External::New(context2d));
 	canvas->_context2d = context2d;
@@ -925,13 +925,14 @@ Handle<Value> BGJSGLModule::js_canvas_getContext(const Arguments& args) {
 	return scope.Close(jsObj);
 }
 
-void BGJSGLModule::js_context_destruct(v8::Persistent<v8::Value> value,
+void js_context_destruct(v8::Persistent<v8::Value> value,
 		void *data) {
 	v8::HandleScope scope;
 
-	BGJSContext2dGL *obj = static_cast<BGJSContext2dGL*>(data);
+	// BGJSContext2dGL *obj = static_cast<BGJSContext2dGL*>(data);
 	// assert(value.IsNearDeath());
-	delete obj;
+	delete data;
+	// TODO: kill value
 }
 
 void BGJSGLModule::doRequire(v8::Handle<v8::Object> target) {

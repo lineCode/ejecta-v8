@@ -305,7 +305,7 @@ Handle<Value> BGJSContext::normalizePath(const Arguments& args) {
 	TryCatch try_catch;
 	std::string baseNameStr = std::string(*basename);
 
-	Local<Value> dirVal = Context::GetEntered()->GetData();
+	Local<Value> dirVal = Context::GetEntered()->GetEmbedderData(1);
 	Local<String> dirName;
 	if (dirVal->IsUndefined()) {
 		dirName = String::New("js");
@@ -364,7 +364,7 @@ Handle<Value> BGJSContext::require(const Arguments& args) {
 	Local<Object> sandbox = args[1]->ToObject();
 	Handle<String> dirNameStr = String::New("__dirname");
 
-	Local<Value> dirVal = Context::GetEntered()->GetData();
+	Local<Value> dirVal = Context::GetEntered()->GetEmbedderData(1);
 	Local<String> dirName;
 	if (dirVal->IsUndefined()) {
 		dirName = String::New("js");
@@ -511,7 +511,7 @@ Handle<Value> BGJSContext::require(const Arguments& args) {
 	// Enter the context
 	context->Enter();
 
-	context->SetData(String::New(basePath.c_str()));
+	context->SetEmbedderData(1, String::New(basePath.c_str()));
 
 	sandbox->Set(dirNameStr, String::New(basePath.c_str()));
 #ifdef DEBUG
@@ -766,8 +766,7 @@ Handle<Value> BGJSContext::js_global_requestAnimationFrame(
 	if (args.Length() >= 2 && args[0]->IsFunction() && args[1]->IsObject()) {
 		Persistent<Object> func = Persistent<Object>::New(args[0]->ToObject());
 		Handle<Object> objRef = args[1]->ToObject();
-		BGJSGLView* view = static_cast<BGJSGLView *>(External::Unwrap(
-				objRef->GetInternalField(0)));
+		BGJSGLView* view = static_cast<BGJSGLView *>(v8::External::Cast(*(objRef->GetInternalField(0)))->Value());
 		Persistent<Object> thisObj = Persistent<Object>::New(args.This());
 		if (func->IsFunction()) {
 			#ifdef DEBUG

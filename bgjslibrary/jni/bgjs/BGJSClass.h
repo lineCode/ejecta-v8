@@ -38,7 +38,7 @@ public:
 		} else if (!data->IsExternal()) {
 			LOGE("Data not external");
 		} else {
-			return static_cast<T *>(v8::External::Unwrap(data));
+			return static_cast<T *>(v8::External::Cast(*(data))->Value());
 		}
 
 		//If function gets here, one of the checks above failed

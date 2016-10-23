@@ -4,6 +4,7 @@
 #include "../BGJSCanvasContext.h"
 #include "../BGJSModule.h"
 
+class BGJSContext2dGL;
 
 class BGJSGLModule : public BGJSModule {
 	bool initialize();
