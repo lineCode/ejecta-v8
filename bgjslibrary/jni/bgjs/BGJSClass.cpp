@@ -5,11 +5,11 @@ using namespace v8;
 #define LOG_TAG "BGJSClass"
 
 ////////////////////////////////////////////////////////////////////////
-Local<FunctionTemplate> BGJSClass::makeStaticCallableFunc(InvocationCallback func)
+Local<FunctionTemplate> BGJSClass::makeStaticCallableFunc(FunctionCallback func)
 {
-    HandleScope scope;
-    Local<FunctionTemplate> funcTemplate = FunctionTemplate::New(func, classPtrToExternal());
-    return scope.Close(funcTemplate);
+    EscapableHandleScope scope(Isolate::GetCurrent());
+    Local<FunctionTemplate> funcTemplate = FunctionTemplate::New(Isolate::GetCurrent(), func, classPtrToExternal());
+    return scope.Escape(funcTemplate);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -21,6 +21,6 @@ Local<FunctionTemplate> BGJSClass::makeStaticCallableFunc(InvocationCallback fun
 ////////////////////////////////////////////////////////////////////////
 Local<External> BGJSClass::classPtrToExternal()
 {
-    HandleScope scope;
-    return scope.Close(External::New(reinterpret_cast<void *>(this)));
+    EscapableHandleScope scope(Isolate::GetCurrent());
+    return scope.Escape(External::New(Isolate::GetCurrent(), reinterpret_cast<void *>(this)));
 }

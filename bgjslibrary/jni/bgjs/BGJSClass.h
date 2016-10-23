@@ -16,7 +16,7 @@ class BGJSClass {
 public:
 
 	v8::Local<v8::FunctionTemplate> makeStaticCallableFunc(
-			v8::InvocationCallback func);
+			v8::FunctionCallback func);
 	v8::Local<v8::External> classPtrToExternal();
 	// See: http://stackoverflow.com/questions/3171418/v8-functiontemplate-class-instance
 

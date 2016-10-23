@@ -37,11 +37,11 @@ const char* ToCString(const v8::String::Utf8Value& value);
 void LogStackTrace(v8::Local<v8::StackTrace>& str);
 
 struct WrapPersistentFunc {
-	v8::Persistent<v8::Function> callbackFunc;
+	v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > callbackFunc;
 };
 
 struct WrapPersistentObj {
-	v8::Persistent<v8::Object> obj;
+	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > obj;
 };
 
 typedef  void (*requireHook) (v8::Handle<v8::Object> target);
@@ -52,41 +52,43 @@ public:
     BGJSContext();
 	virtual ~BGJSContext();
 
-	void callFunction(const char* name, v8::Arguments arguments);
+	v8::Handle<v8::Value> callFunction(v8::Handle<v8::Object> recv, const uint8_t* name,
+    		int argc, v8::Handle<v8::Value> argv[]);
 	bool loadScript(const char* path);
 	bool registerModule(const char *name, requireHook f);
-	v8::Handle<v8::Value> executeJS(const char* src);
+	v8::Handle<v8::Value> executeJS(const uint8_t* src);
 
-	v8::Persistent<v8::Script> load(const char* path);
+	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > load(const char* path);
 	static void ReportException(v8::TryCatch* try_catch);
-	static void log(int, const v8::Arguments& args);
+	static void log(int level, const v8::FunctionCallbackInfo<v8::Value>& args);
 	int run();
 	void setClient(ClientAbstract* client);
 	ClientAbstract* getClient();
 	void setLocale(const char* locale, const char* lang, const char* tz);
-	v8::Handle<v8::Value> require(const v8::Arguments& args);
-	v8::Handle<v8::Value> normalizePath(const v8::Arguments& args);
-	v8::Handle<v8::Value> callFunction(v8::Handle<v8::Object> recv, const char* name, int argc, v8::Handle<v8::Value> argv[]);
-	static v8::Handle<v8::Value> js_global_requestAnimationFrame (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_cancelAnimationFrame (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_setTimeout (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_clearTimeout (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_setInterval (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_clearInterval (const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_global_getLocale(v8::Local<v8::String> property,
-			const v8::AccessorInfo &info);
+	void require(const v8::FunctionCallbackInfo<v8::Value>& args);
+	void normalizePath(const v8::FunctionCallbackInfo<v8::Value>& info);
+	v8::Handle<v8::Value> callFunction(v8::Handle<v8::Object> recv, const char* name,
+			int argc, v8::Handle<v8::Value> argv[]);
+	static void js_global_requestAnimationFrame (const v8::FunctionCallbackInfo<v8::Value>&);
+	static void js_global_cancelAnimationFrame (const v8::FunctionCallbackInfo<v8::Value>& args);
+	static void js_global_setTimeout (const v8::FunctionCallbackInfo<v8::Value>& info);
+	static void js_global_clearTimeout (const v8::FunctionCallbackInfo<v8::Value>& info);
+	static void js_global_setInterval (const v8::FunctionCallbackInfo<v8::Value>& info);
+	static void js_global_clearInterval (const v8::FunctionCallbackInfo<v8::Value>& info);
+	static void js_global_getLocale(v8::Local<v8::String> property,
+			const v8::PropertyCallbackInfo<v8::Value>& info);
 	static void js_global_setLocale(v8::Local<v8::String> property, v8::Local<v8::Value> value,
-			const v8::AccessorInfo &info);
-	static v8::Handle<v8::Value> js_global_getLang(v8::Local<v8::String> property,
-			const v8::AccessorInfo &info);
+			const v8::PropertyCallbackInfo<void>& info);
+	static void js_global_getLang(v8::Local<v8::String> property,
+			const v8::PropertyCallbackInfo<v8::Value>& info);
 	static void js_global_setLang(v8::Local<v8::String> property, v8::Local<v8::Value> value,
-			const v8::AccessorInfo &info);
-	static v8::Handle<v8::Value> js_global_getTz(v8::Local<v8::String> property,
-			const v8::AccessorInfo &info);
+			const v8::PropertyCallbackInfo<void>& info);
+	static void js_global_getTz(v8::Local<v8::String> property,
+			const v8::PropertyCallbackInfo<v8::Value>& info);
 	static void js_global_setTz(v8::Local<v8::String> property, v8::Local<v8::Value> value,
-			const v8::AccessorInfo &info);
-	static v8::Handle<v8::Value> setTimeoutInt(const v8::Arguments& args, bool recurring);
-	static void clearTimeoutInt(const v8::Arguments& args);
+			const v8::PropertyCallbackInfo<void>& info);
+	static void setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& info, bool recurring);
+	static void clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& info);
 	void cancelAnimationFrame(int id);
 	bool runAnimationRequests(BGJSGLView* view);
 	void registerGLView(BGJSGLView* view);
@@ -96,7 +98,7 @@ public:
 
 	void createContext();
 	ClientAbstract *_client;
-	v8::Persistent<v8::Script> _script;  // Reference to script object that was loaded
+	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > _script;  // Reference to script object that was loaded
 	static bool debug;
 	char *_locale;	// de_DE
 	char *_lang;	// de
@@ -113,8 +115,7 @@ private:
 	std::string normalize_path(std::string& path);
 	std::string getPathName(std::string& path);
 	// Attributes
-	v8::Persistent<v8::Function> cloneObjectMethod;	// clone
-	v8::Persistent<v8::Function> jsonParseMethod;   // json parser
+	v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > cloneObjectMethod;	// clone
 	std::map<std::string, requireHook> _modules;
 
 #ifdef INTERNAL_REQUIRE_CACHE

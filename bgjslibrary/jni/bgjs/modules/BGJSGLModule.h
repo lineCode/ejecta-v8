@@ -15,9 +15,9 @@ public:
 	BGJSGLModule();
 	v8::Handle<v8::Value> initWithContext(BGJSContext* context);
 	static void doRequire (v8::Handle<v8::Object> target);
-	static v8::Handle<v8::Value> create(const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_canvas_constructor(const v8::Arguments& args);
-	static v8::Handle<v8::Value> js_canvas_getContext(const v8::Arguments& args);
+	static v8::Handle<v8::Value> create(const v8::FunctionCallback& info);
+	static v8::Handle<v8::Value> js_canvas_constructor(const v8::FunctionCallback& info);
+	static v8::Handle<v8::Value> js_canvas_getContext(const v8::FunctionCallback& info);
 	static void js_context_destruct (v8::Persistent<v8::Value> value, void *data);
 	// static v8::Handle<v8::Value> js_context_beginPath(const v8::Arguments& args);
 	// static Handle<Value> BGJSCanvasGL:js_context_beginPath(const Arguments& args)

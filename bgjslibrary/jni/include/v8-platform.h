@@ -1,4 +1,4 @@
-// Copyright 2010 the V8 project authors. All rights reserved.
+// Copyright 2013 the V8 project authors. All rights reserved.
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -25,47 +25,62 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef V8_V8_TEST_H_
-#define V8_V8_TEST_H_
+#ifndef V8_V8_PLATFORM_H_
+#define V8_V8_PLATFORM_H_
 
 #include "v8.h"
 
-/**
- * Testing support for the V8 JavaScript engine.
- */
 namespace v8 {
 
-class V8_EXPORT Testing {
+/**
+ * A Task represents a unit of work.
+ */
+class Task {
  public:
-  enum StressType {
-    kStressTypeOpt,
-    kStressTypeDeopt
+  virtual ~Task() {}
+
+  virtual void Run() = 0;
+};
+
+/**
+ * V8 Platform abstraction layer.
+ *
+ * The embedder has to provide an implementation of this interface before
+ * initializing the rest of V8.
+ */
+class Platform {
+ public:
+  /**
+   * This enum is used to indicate whether a task is potentially long running,
+   * or causes a long wait. The embedder might want to use this hint to decide
+   * whether to execute the task on a dedicated thread.
+   */
+  enum ExpectedRuntime {
+    kShortRunningTask,
+    kLongRunningTask
   };
 
   /**
-   * Set the type of stressing to do. The default if not set is kStressTypeOpt.
+   * Schedules a task to be invoked on a background thread. |expected_runtime|
+   * indicates that the task will run a long time. The Platform implementation
+   * takes ownership of |task|. There is no guarantee about order of execution
+   * of tasks wrt order of scheduling, nor is there a guarantee about the
+   * thread the task will be run on.
    */
-  static void SetStressRunType(StressType type);
+  virtual void CallOnBackgroundThread(Task* task,
+                                      ExpectedRuntime expected_runtime) = 0;
 
   /**
-   * Get the number of runs of a given test that is required to get the full
-   * stress coverage.
+   * Schedules a task to be invoked on a foreground thread wrt a specific
+   * |isolate|. Tasks posted for the same isolate should be execute in order of
+   * scheduling. The definition of "foreground" is opaque to V8.
    */
-  static int GetStressRuns();
+  virtual void CallOnForegroundThread(Isolate* isolate, Task* task) = 0;
 
-  /**
-   * Indicate the number of the run which is about to start. The value of run
-   * should be between 0 and one less than the result from GetStressRuns()
-   */
-  static void PrepareStressRun(int run);
-
-  /**
-   * Force deoptimization of all functions.
-   */
-  static void DeoptimizeAll();
+ protected:
+  virtual ~Platform() {}
 };
-
 
 }  // namespace v8
 
-#endif  // V8_V8_TEST_H_
+#endif  // V8_V8_PLATFORM_H_
