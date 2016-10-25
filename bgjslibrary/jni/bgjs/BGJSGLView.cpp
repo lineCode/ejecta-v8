@@ -127,7 +127,7 @@ void BGJSGLView::resize(int widthp, int heightp, bool resizeOnly) {
 		Handle<Value> args[0];
 		for (std::vector<Persistent<Object> >::size_type i = 0; i < count;
 				i++) {
-			Handle<Value> result = _cbResize[i]->CallAsFunction(_jsObj, 0, args);
+			Handle<Value> result = (*reinterpret_cast<Local<Object>*>(&_cbResize[i]))->CallAsFunction(_jsObj, 0, args);
 
 			if (result.IsEmpty()) {
 				BGJSContext::ReportException(&trycatch);
@@ -142,7 +142,7 @@ void BGJSGLView::close() {
 	for (int i = 0; i < MAX_FRAME_REQUESTS; i++) {
 		if (_frameRequests[i].valid && _frameRequests[i].view != NULL) {
 			_frameRequests[i].valid = false;
-			_frameRequests[i].callback.Dispose();
+			_frameRequests[i].callback.Reset();
 			_frameRequests[i].view = NULL;
 		}
 	}

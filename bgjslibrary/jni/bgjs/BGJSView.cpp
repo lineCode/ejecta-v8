@@ -28,7 +28,7 @@ static void checkGlError(const char* op) {
 }
 
 
-Handle<Value> getWidth(Local<String> property, const AccessorInfo &info) {
+void getWidth(Local<String> property, const AccessorInfo &info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -43,7 +43,7 @@ void setWidth(Local<String> property, Local<Value> value,
 		const AccessorInfo& info) {
 }
 
-Handle<Value> getHeight(Local<String> property, const AccessorInfo &info) {
+void getHeight(Local<String> property, const AccessorInfo &info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -54,7 +54,7 @@ Handle<Value> getHeight(Local<String> property, const AccessorInfo &info) {
 	return Integer::New(value);
 }
 
-Handle<Value> getPixelRatio(Local<String> property, const AccessorInfo &info) {
+void getPixelRatio(Local<String> property, const AccessorInfo &info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -81,30 +81,32 @@ void setHeight(Local<String> property, Local<Value> value,
 	static_cast<BGJSView*>(ptr)->height = value->Int32Value();
 }
 
-Handle<Value> BGJSView::js_view_on(const Arguments& args) {
-	v8::Locker l;
-	HandleScope scope;
+void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	Isolate* isolate = Isolate::GetCurrent();
+    v8::Locker l(isolate);
+    HandleScope scope(isolate);
 	BGJSView *view = externalToClassPtr<BGJSView>(args.Data());
 	if (args.Length() == 2 && args[0]->IsString() && args[1]->IsObject()) {
 		Handle<Object> func = args[1]->ToObject();
 		if (func->IsFunction()) {
 			String::Utf8Value eventUtf8(args[0]->ToString());
+			v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > funcPersist(isolate, func);
 			const char *event = *eventUtf8;
 			if (strcmp(event, "event") == 0) {
-				view->_cbEvent.push_back(Persistent<Object>::New(func));
+				view->_cbEvent.push_back(funcPersist);
 			} else if (strcmp(event, "close") == 0) {
-				view->_cbClose.push_back(Persistent<Object>::New(func));
+				view->_cbClose.push_back(funcPersist);
 			} else if (strcmp(event, "resize") == 0) {
-				view->_cbResize.push_back(Persistent<Object>::New(func));
+				view->_cbResize.push_back(funcPersist);
 			} else if (strcmp(event, "redraw") == 0) {
-				view->_cbRedraw.push_back(Persistent<Object>::New(func));
+				view->_cbRedraw.push_back(funcPersist);
 			}
 		}
 	}
-	return v8::Undefined();
+	args.GetReturnValue().SetUndefined();
 }
 
-BGJSView::BGJSView(BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
+BGJSView::BGJSView(Isolate* isolate, BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
 	opened = false;
 	_contentObj = 0;
 
@@ -114,8 +116,8 @@ BGJSView::BGJSView(BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
 
 	// Create new JS BGJSView object
 	this->_jsContext = ctx;
-	v8::Local<v8::FunctionTemplate> bgjsglft = v8::FunctionTemplate::New();
-	bgjsglft->SetClassName(String::New("BGJSView"));
+	v8::Local<v8::FunctionTemplate> bgjsglft = v8::FunctionTemplate::New(isolate);
+	bgjsglft->SetClassName(String::NewFromUtf8(isolate, "BGJSView"));
 	v8::Local<v8::ObjectTemplate> bgjsgl = bgjsglft->InstanceTemplate();
 	bgjsgl->SetInternalFieldCount(1);
 	bgjsgl->SetAccessor(String::New("width"), getWidth, setWidth);
