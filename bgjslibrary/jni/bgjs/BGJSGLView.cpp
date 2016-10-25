@@ -165,8 +165,9 @@ void BGJSGLView::requestRefresh() {
 #endif
 }
 
-int BGJSGLView::requestAnimationFrameForView(Persistent<Object> cb, Persistent<Object> thisObj,
-		int id) {
+int BGJSGLView::requestAnimationFrameForView(Handle<Object> cb, Handle<Object> thisObj,
+		int id, Isolate* isolate) {
+	HandleScope scope(isolate);
 	// make sure there is still room in the buffer
 #ifdef DEBUG
 	LOGD("requestAnimation %d %d", _firstFrameRequest, _nextFrameRequest);
@@ -179,10 +180,10 @@ int BGJSGLView::requestAnimationFrameForView(Persistent<Object> cb, Persistent<O
 	// schedule request
 
 	AnimationFrameRequest *request = &_frameRequests[_nextFrameRequest];
-	request->callback = cb;
+	request->callback.Reset(isolate, cb);
 	request->view = this;
 	request->valid = true;
-	request->thisObj = thisObj;
+	request->thisObj.Reset(isolate, thisObj);
 	request->requestId = id;
 	_nextFrameRequest = (_nextFrameRequest + 1) % MAX_FRAME_REQUESTS;
 

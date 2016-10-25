@@ -9,8 +9,8 @@
 
 typedef struct __tagAnimationFrameRequest {
 	BGJSGLView *view;
-	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > callback;
-	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > thisObj;
+	v8::Persistent<v8::Object> callback;
+	v8::Persistent<v8::Object> thisObj;
 	bool valid;
 	int requestId;
 } AnimationFrameRequest;
@@ -27,8 +27,8 @@ public:
 	void resize (int width, int height, bool resizeOnly);
 	void close ();
 	void requestRefresh();
-	int requestAnimationFrameForView(v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > cb,
-	    v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > thisObj, int id);
+	int requestAnimationFrameForView(v8::Isolate* isolate, v8::Handle<v8::Object> cb,
+	    v8::Handle<v8::Object> thisObj, int id);
 #ifdef ANDROID
 	void setJavaGl(JNIEnv* env, jobject javaGlView);
 #endif

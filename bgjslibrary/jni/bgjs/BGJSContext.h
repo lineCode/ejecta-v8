@@ -37,11 +37,11 @@ const char* ToCString(const v8::String::Utf8Value& value);
 void LogStackTrace(v8::Local<v8::StackTrace>& str);
 
 struct WrapPersistentFunc {
-	v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > callbackFunc;
+	v8::Persistent<v8::Function> callbackFunc;
 };
 
 struct WrapPersistentObj {
-	v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > obj;
+	v8::Persistent<v8::Object> obj;
 };
 
 typedef  void (*requireHook) (v8::Handle<v8::Object> target);
@@ -98,7 +98,7 @@ public:
 
 	void createContext();
 	ClientAbstract *_client;
-	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > _script;  // Reference to script object that was loaded
+	v8::Persistent<v8::Script> _script;  // Reference to script object that was loaded
 	static bool debug;
 	char *_locale;	// de_DE
 	char *_lang;	// de
@@ -115,7 +115,7 @@ private:
 	std::string normalize_path(std::string& path);
 	std::string getPathName(std::string& path);
 	// Attributes
-	v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function> > cloneObjectMethod;	// clone
+	v8::Persistent<v8::Function> cloneObjectMethod;	// clone
 	std::map<std::string, requireHook> _modules;
 
 #ifdef INTERNAL_REQUIRE_CACHE

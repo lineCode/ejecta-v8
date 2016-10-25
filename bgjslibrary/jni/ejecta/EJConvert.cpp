@@ -67,12 +67,12 @@ EJColorRGBA JSValueToColorRGBA(Local<Value> value) {
 	return c;
 }
 
-Handle<String> ColorRGBAToJSValue (EJColorRGBA c) {
-	HandleScope scope;
+Local<String> ColorRGBAToJSValue (Isolate* isolate, EJColorRGBA c) {
+	EscapableHandleScope scope(isolate);
 	static char buffer[32];
 	sprintf(buffer, "rgba(%d,%d,%d,%.3f)", c.rgba.r, c.rgba.g, c.rgba.b, (float)c.rgba.a/255.0f );
 
-	Handle<String> string = String::New(buffer);
-	return scope.Close(string);
+	Local<String> string = String::NewFromUtf8(isolate, buffer);
+	return scope.Escape(string);
 }
 

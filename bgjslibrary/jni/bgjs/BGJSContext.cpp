@@ -26,8 +26,8 @@
 
 using namespace v8;
 
-v8::Persistent<v8::Context, v8::CopyablePersistentTraits<v8::Context> > BGJSInfo::_context;
-v8::Persistent<v8::ObjectTemplate, v8::CopyablePersistentTraits<v8::ObjectTemplate> > BGJSInfo::_global;
+v8::Persistent<v8::Context> BGJSInfo::_context;
+v8::Persistent<v8::ObjectTemplate> BGJSInfo::_global;
 BGJSContext* BGJSInfo::_jscontext;
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
@@ -172,8 +172,7 @@ void BGJSContext::CloneObject(Handle<Object> recv, Handle<Value> source,
 								String::NewFromOneByte(Isolate::GetCurrent(),
 								    (const uint8_t*)cloneScript),
 								String::NewFromOneByte(Isolate::GetCurrent(), (const uint8_t*)"binding:script"))->Run());
-		Persistent<Function, CopyablePersistentTraits<Function> > cloneMethodPersist(Isolate::GetCurrent(), cloneObjectMethod_);
-		this->cloneObjectMethod = cloneMethodPersist;
+		this->cloneObjectMethod.Reset(Isolate::GetCurrent(), cloneObjectMethod_);
 	}
 
 	Local<Function>::New(Isolate::GetCurrent(), this->cloneObjectMethod)->Call(recv, 2, args);
@@ -786,21 +785,20 @@ void BGJSContext::js_global_setTz(Local<String> property, Local<Value> value,
 
 void BGJSContext::js_global_requestAnimationFrame(
 		const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Locker l(Isolate::GetCurrent());
-	HandleScope scope(Isolate::GetCurrent());
+	Isolate* isolate = Isolate::GetCurrent();
+	v8::Locker l(isolate);
+	HandleScope scope(isolate);
 	BGJSContext *ctx = BGJSInfo::_jscontext;
 
 	if (args.Length() >= 2 && args[0]->IsFunction() && args[1]->IsObject()) {
 	    Local<Object> localFunc = args[0]->ToObject();
-	    Persistent<Object, CopyablePersistentTraits<Object> > func(Isolate::GetCurrent(), localFunc);
 		Handle<Object> objRef = args[1]->ToObject();
 		BGJSGLView* view = static_cast<BGJSGLView *>(v8::External::Cast(*(objRef->GetInternalField(0)))->Value());
-		Persistent<Object, CopyablePersistentTraits<Object> > thisObj(Isolate::GetCurrent(), args.This());
 		if (localFunc->IsFunction()) {
 			#ifdef DEBUG
 				LOGD("requestAnimationFrame: on BGJSGLView %p, %p", view, &thisObj);
 			#endif
-			int id = view->requestAnimationFrameForView(func, thisObj,
+			int id = view->requestAnimationFrameForView(isolate, localFunc, args.This(),
 					(ctx->_nextTimerId)++);
 			args.GetReturnValue().Set(id);
 			return;
@@ -808,14 +806,13 @@ void BGJSContext::js_global_requestAnimationFrame(
 			LOGI("requestAnimationFrame: Not a function");
 		}
 	} else {
-		Isolate::GetCurrent()->ThrowException(
+		isolate->ThrowException(
 				v8::Exception::ReferenceError(
 					v8::String::NewFromUtf8(Isolate::GetCurrent(), "requestAnimationFrame: Wrong number or type of parameters")));
 		return;
 		// return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("Wrong number of parameters")));
 	}
 	args.GetReturnValue().Set(-1);
-	return;
 }
 
 void BGJSContext::js_global_cancelAnimationFrame(
@@ -829,7 +826,6 @@ void BGJSContext::js_global_cancelAnimationFrame(
 	}
 
 	args.GetReturnValue().SetUndefined();
-	return;
 }
 
 void BGJSContext::js_global_setTimeout(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -849,13 +845,11 @@ void BGJSContext::setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args,
 
 	if (args.Length() == 2 && args[0]->IsFunction() && args[1]->IsNumber()) {
 		Local<v8::Function> callback = Local<Function>::Cast(args[0]);
-		Persistent<Object, CopyablePersistentTraits<Object> > thisPersist(isolate, args.This());
 
 		WrapPersistentFunc* ws = new WrapPersistentFunc();
-		Persistent<Function, CopyablePersistentTraits<Function> > callbackPersist(isolate, callback);
-		ws->callbackFunc = callbackPersist;
+		ws->callbackFunc.Reset(isolate, callback);
 		WrapPersistentObj* wo = new WrapPersistentObj();
-		wo->obj = thisPersist;
+		wo->obj.Reset(isolate, args.This());
 
 		jlong timeout = (jlong)(Local<Number>::Cast(args[1])->Value());
 
@@ -1023,8 +1017,7 @@ BGJSContext::BGJSContext() {
 			v8::FunctionTemplate::New(isolate, BGJSContext::js_global_clearInterval));
 
 	// Also, persist the global object template so we can add stuff here later when calling require
-	Persistent<ObjectTemplate, CopyablePersistentTraits<ObjectTemplate> > globalPersist(isolate, global);
-	BGJSInfo::_global = globalPersist;
+	BGJSInfo::_global.Reset(isolate, global);
 
 	LOGD("v8 version %s", V8::GetVersion());
 }
@@ -1041,9 +1034,8 @@ void BGJSContext::createContext() {
     // Create a stack-allocated handle scope.
     HandleScope scope(isolate);
 	// Create a new context.
-	Persistent<Context, CopyablePersistentTraits<Value> > psContext(isolate, v8::Context::New(isolate, NULL,
-	        Local<ObjectTemplate>::New(isolate, BGJSInfo::_global)));
-	BGJSInfo::_context = psContext;
+	BGJSInfo::_context.Reset(isolate, v8::Context::New(isolate, NULL,
+                                      	        Local<ObjectTemplate>::New(isolate, BGJSInfo::_global)));
 	BGJSInfo::_jscontext = this;
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
