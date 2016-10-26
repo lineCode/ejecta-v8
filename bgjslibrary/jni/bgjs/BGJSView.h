@@ -12,19 +12,19 @@
 
 class BGJSView : public BGJSInfo, public BGJSClass {
 public:
-	BGJSView(BGJSContext* ctx, float pixelRatio, bool doNoClearOnFlip);
+	BGJSView(v8::Isolate* isolate, const BGJSContext* ctx, float pixelRatio, bool doNoClearOnFlip);
 	virtual ~BGJSView();
-	v8::Handle<v8::Value> startJS(const char* fnName, const char* configJson, v8::Handle<v8::Value> uiObj, long configId, bool hasIntradayQuotes);
-	static void js_view_on(const v8::FunctionCallback& info);
-	void sendEvent(v8::Handle<v8::Object> eventObjRef);
-	void call(std::vector<v8::Persistent<v8::Object>, v8::CopyablePersistentTraits<v8::Object> > &list);
+	v8::Handle<v8::Value> startJS(v8::Isolate* isolate, const char* fnName, const char* configJson, v8::Handle<v8::Value> uiObj, long configId, bool hasIntradayQuotes);
+	static void js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args);
+	void sendEvent(v8::Isolate* isolate, v8::Handle<v8::Object> eventObjRef);
+	void call(v8::Isolate* isolate, std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >*> &list);
 
 	v8::Persistent<v8::Object> _jsObj;
 	v8::Persistent<v8::Object> _bridgeObj;	// TODO: This is returned by startJS
-	std::vector<v8::Persistent<v8::Object>, v8::CopyablePersistentTraits<v8::Object> > _cbResize;
-	std::vector<v8::Persistent<v8::Object>, v8::CopyablePersistentTraits<v8::Object> > _cbEvent;
-	std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > > _cbClose;
-	std::vector<v8::Persistent<v8::Object>, v8::CopyablePersistentTraits<v8::Object> > _cbRedraw;
+	std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >*> _cbResize;
+	std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >*> _cbEvent;
+	std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >*> _cbClose;
+	std::vector<v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >*> _cbRedraw;
 	int _contentObj = -1;	// This is the object returned by the JS init code
 
 #ifdef ANDROID
@@ -33,7 +33,7 @@ public:
 #endif
 
     v8::Persistent<v8::ObjectTemplate> jsViewOT;
-	BGJSContext* _jsContext;
+	const BGJSContext* _jsContext;
 	int width, height;
 	bool opened;
 	float pixelRatio;

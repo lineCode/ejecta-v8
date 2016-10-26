@@ -245,6 +245,7 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 	_client->v8Engine = v8Engine;
 
 	BGJSContext* ct = new BGJSContext();
+	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 
 	const char* localeStr = env->GetStringUTFChars(locale, NULL);
 	const char* langStr = env->GetStringUTFChars(lang, NULL);
@@ -255,8 +256,8 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 	env->ReleaseStringUTFChars(timezone, tzStr);
 	ct->setClient(_client);
 	ct->createContext();
-	AjaxModule::doRegister(ct);
-	BGJSGLModule::doRegister(ct);
+	AjaxModule::doRegister(isolate, ct);
+	BGJSGLModule::doRegister(isolate, ct);
 
 	ct->registerModule("ajax", AjaxModule::doRequire);
 	ct->registerModule("canvas", BGJSGLModule::doRequire);
@@ -268,9 +269,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_load(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jstring path) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	const char* pathStr = env->GetStringUTFChars(path, 0);
-	Persistent<Script> res = ct->load(pathStr);
+	Persistent<Script, CopyablePersistentTraits<Script> > res = ct->load(pathStr);
 	if (!res.IsEmpty()) {
-		ct->_script = res;
+		ct->_script.Reset(Isolate::GetCurrent(), res);
 	}
 	env->ReleaseStringUTFChars(path, pathStr);
 }
@@ -285,18 +286,19 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_run(JNIEnv * env,
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jlong jsCbPtr, jlong thisPtr, jboolean cleanup, jboolean runCb) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
+	Isolate* isolate = Isolate::GetCurrent();
 
-	v8::Locker l;
-	Context::Scope context_scope(context->_context);
+	v8::Locker l (isolate);
+	Context::Scope context_scope((*reinterpret_cast<Local<Context>*>(&context->_context)));
 
-	HandleScope scope;
+	HandleScope scope (isolate);
 	TryCatch trycatch;
 
 	// Persistent<Function>* callbackPers = (Persistent<Function>*) jsCbPtr;
 	WrapPersistentObj* wo = (WrapPersistentObj*)thisPtr;
-	Persistent<Object> thisObj = wo->obj;
+	Local<Object> thisObj = (*reinterpret_cast<Local<Object>*>(&wo->obj));
 	WrapPersistentFunc* ws = (WrapPersistentFunc*)jsCbPtr;
-	Persistent<Function> callbackP = ws->callbackFunc;
+	Local<Function> callbackP = (*reinterpret_cast<Local<Function>*>(&ws->callbackFunc));
 
 	if (DEBUG) {
 		LOGI("timeoutCb called, cbPtr is %llu, thisObj %llu, ctxPtr %llu", jsCbPtr, thisPtr, ctxPtr);
@@ -316,9 +318,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		if (DEBUG) {
 			LOGI("timeoutCb cleaning up");
 		}
-		thisObj.Dispose();
+		wo->obj.Reset();
 		delete(wo);
-		callbackP.Dispose();
+		ws->callbackFunc.Reset();
 		delete(ws);
 	}
 }
@@ -326,23 +328,28 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_runCBBoolean (JNIEnv * env, jobject obj, jlong ctxPtr, jlong cbPtr, jlong thisPtr, jboolean b) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
 
-	v8::Locker l;
-	Context::Scope context_scope(context->_context);
+	Isolate* isolate = Isolate::GetCurrent();
 
-	HandleScope scope;
+	v8::Locker l (isolate);
+	Context::Scope context_scope((*reinterpret_cast<Local<Context>*>(&context->_context)));
+
+	HandleScope scope(isolate);
 	TryCatch trycatch;
-	Persistent<Function> fn = static_cast<Function*>((Function*)cbPtr);
-	Persistent<Object> thisObj = static_cast<Object*>((void*)thisPtr);
+	Persistent<Function>* fnPersist = static_cast<Persistent<Function>*>((void*)cbPtr);
+	Persistent<Object>* thisObjPersist = static_cast<Persistent<Object>*>((void*)thisPtr);
+	Local<Function> fn = (*reinterpret_cast<Local<Function>*>(fnPersist));
+	Local<Object> thisObj = (*reinterpret_cast<Local<Object>*>(thisObjPersist));
 
 	LOGD("runOn %llu %llu", cbPtr, thisPtr);
 
 	int argcount = 1;
-	Handle<Value> argarray[] = { Boolean::New(b ? true : false)};
+	Handle<Value> argarray[] = { Boolean::New(isolate, b ? true : false)};
 
 	Handle<Value> result = fn->Call(thisObj, argcount, argarray);
 	if (result.IsEmpty()) {
 		BGJSContext::ReportException(&trycatch);
 	}
+	// TODO: Don't we need to clean up these persistents?
 }
 
 

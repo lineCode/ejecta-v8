@@ -44,7 +44,7 @@ struct WrapPersistentObj {
 	v8::Persistent<v8::Object> obj;
 };
 
-typedef  void (*requireHook) (v8::Handle<v8::Object> target);
+typedef  void (*requireHook) (v8::Isolate* isolate, v8::Handle<v8::Object> target);
 
 class BGJSContext : public BGJSInfo {
 public:
@@ -52,8 +52,8 @@ public:
     BGJSContext();
 	virtual ~BGJSContext();
 
-	v8::Handle<v8::Value> callFunction(v8::Handle<v8::Object> recv, const uint8_t* name,
-    		int argc, v8::Handle<v8::Value> argv[]);
+	v8::Handle<v8::Value> callFunction(v8::Isolate* isolate, v8::Handle<v8::Object> recv, const char* name,
+    		int argc, v8::Handle<v8::Value> argv[]) const;
 	bool loadScript(const char* path);
 	bool registerModule(const char *name, requireHook f);
 	v8::Handle<v8::Value> executeJS(const uint8_t* src);
@@ -67,8 +67,6 @@ public:
 	void setLocale(const char* locale, const char* lang, const char* tz);
 	void require(const v8::FunctionCallbackInfo<v8::Value>& args);
 	void normalizePath(const v8::FunctionCallbackInfo<v8::Value>& info);
-	v8::Handle<v8::Value> callFunction(v8::Handle<v8::Object> recv, const char* name,
-			int argc, v8::Handle<v8::Value> argv[]);
 	static void js_global_requestAnimationFrame (const v8::FunctionCallbackInfo<v8::Value>&);
 	static void js_global_cancelAnimationFrame (const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void js_global_setTimeout (const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -90,7 +88,7 @@ public:
 	static void setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& info, bool recurring);
 	static void clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& info);
 	void cancelAnimationFrame(int id);
-	bool runAnimationRequests(BGJSGLView* view);
+	bool runAnimationRequests(BGJSGLView* view) const;
 	void registerGLView(BGJSGLView* view);
 	void unregisterGLView(BGJSGLView* view);
 

@@ -6,7 +6,7 @@
 
 using namespace v8;
 
-BGJSContext* BGJSModule::_bgjscontext = NULL;
+const BGJSContext* BGJSModule::_bgjscontext = NULL;
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -23,16 +23,17 @@ std::string BGJSModule::getName() const {
 	return name;
 }
 
-void BGJSModule::doRegister (BGJSContext* context) {
+void BGJSModule::doRegister (v8::Isolate* isolate, const BGJSContext* context) {
 	BGJSModule::_bgjscontext = context;
-	BGJSModule::_context = context->_context;
-	BGJSModule::_global = context->_global;
+	BGJSModule::_context.Reset(isolate, context->_context);
+	BGJSModule::_global.Reset(isolate, context->_global);
 }
 
 BGJSModule::~BGJSModule() {
 }
 
-void BGJSModule::javaToJsField (const char* fieldName, const char fieldType, JNIEnv *env, jobject &jobj, v8::Handle<v8::Object> &jsObj) {
+void BGJSModule::javaToJsField (v8::Isolate* isolate, const char* fieldName,
+        const char fieldType, JNIEnv *env, jobject &jobj, v8::Handle<v8::Object> &jsObj) {
 	jclass clazz = env->GetObjectClass(jobj);
 	switch (fieldType) {
 		case 's': {
@@ -41,7 +42,7 @@ void BGJSModule::javaToJsField (const char* fieldName, const char fieldType, JNI
 				jstring javaString = (jstring)env->GetObjectField(jobj, fieldId);
 				if (javaString) {
 					const char *nativeString = env->GetStringUTFChars(javaString, 0);
-					jsObj->Set(String::New(fieldName), String::New(nativeString));
+					jsObj->Set(String::NewFromUtf8(isolate, fieldName), String::NewFromUtf8(isolate, nativeString));
 					env->ReleaseStringUTFChars(javaString, nativeString);
 				} else {
 					LOGD("Couldn't retrieve java string for field %s", fieldName);
@@ -58,7 +59,7 @@ void BGJSModule::javaToJsField (const char* fieldName, const char fieldType, JNI
 				if (env->ExceptionCheck()) {
 					LOGD("Couldn't get int field for field %s", fieldName);
 				}
-				jsObj->Set(String::New(fieldName), Integer::New((int)data));
+				jsObj->Set(String::NewFromUtf8(isolate, fieldName), Integer::New(isolate, (int)data));
 			} else {
 				LOGD("Couldn't find fieldId for int field %s", fieldName);
 			}
@@ -82,8 +83,8 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (J
 
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong nativePtr) {
 	if (nativePtr) {
-		Persistent<Function> func = static_cast<Function*>((void*)nativePtr);
-		func.Dispose();
+		Persistent<Function, v8::CopyablePersistentTraits<v8::Function> > func = *(((Persistent<Function, v8::CopyablePersistentTraits<v8::Function> >*)nativePtr));
+		func.Reset();
 	}
 }
 

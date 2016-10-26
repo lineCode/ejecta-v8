@@ -125,9 +125,9 @@ void LogStackTrace(Local<StackTrace>& str, Isolate* isolate) {
 
 // Register
 bool BGJSContext::registerModule(const char* name,
-		void (*requireFn)(v8::Handle<v8::Object> target)) {
-	v8::Locker l(Isolate::GetCurrent());
-	HandleScope scope(Isolate::GetCurrent());
+		void (*requireFn)(v8::Isolate* isolate, v8::Handle<v8::Object> target)) {
+	// v8::Locker l(Isolate::GetCurrent());
+	// HandleScope scope(Isolate::GetCurrent());
 	// module->initWithContext(this);
 	_modules[name] = requireFn;
 	// _modules.insert(std::pair<char const*, BGJSModule*>(module->getName(), module));
@@ -228,19 +228,19 @@ Handle<Value> BGJSContext::executeJS(const uint8_t* src) {
 	return scope.Escape(result);
 }
 
-Handle<Value> BGJSContext::callFunction(Handle<Object> recv, const uint8_t* name,
-		int argc, Handle<Value> argv[]) {
-	v8::Locker l(Isolate::GetCurrent());
-	EscapableHandleScope scope(Isolate::GetCurrent());
+Handle<Value> BGJSContext::callFunction(Isolate* isolate, Handle<Object> recv, const char* name,
+		int argc, Handle<Value> argv[]) const {
+	v8::Locker l(isolate);
+	EscapableHandleScope scope(isolate);
 	TryCatch trycatch;
 
-	Local<Function> fn = Handle<Function>::Cast(recv->Get(String::NewFromOneByte(Isolate::GetCurrent(), name)));
+	Local<Function> fn = Handle<Function>::Cast(recv->Get(String::NewFromUtf8(isolate, name)));
 			String::Utf8Value value(fn);
 	Local<Value> result = fn->Call(recv, argc, argv);
 	if (result.IsEmpty()) {
 		LOGE("callFunction exception");
 		BGJSContext::ReportException(&trycatch);
-		return v8::Undefined(Isolate::GetCurrent());
+		return v8::Undefined(isolate);
 	}
 	return scope.Escape(result);
 }
@@ -403,7 +403,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	if (module) {
 		Local<Object> exports = Object::New(isolate);
-		module(exports);
+		module(isolate, exports);
 		CloneObject(args.This(), exports, sandbox);
 		args.GetReturnValue().Set(scope.Escape(exports));
 		return;
@@ -672,7 +672,7 @@ void BGJSContext::unregisterGLView(BGJSGLView* view) {
 	_glViews.erase(view);
 }
 
-bool BGJSContext::runAnimationRequests(BGJSGLView* view) {
+bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
     Isolate* isolate = Isolate::GetCurrent();
 	v8::Locker l(isolate);
 	HandleScope scope(isolate);
@@ -724,7 +724,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) {
 
 	// If we couldn't draw anything, request that we can the next time
 	if (!didDraw) {
-		view->call(view->_cbRedraw);
+		view->call(isolate, view->_cbRedraw);
 	}
 	return didDraw;
 }

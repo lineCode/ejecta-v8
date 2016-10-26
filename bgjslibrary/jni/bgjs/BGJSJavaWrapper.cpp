@@ -20,9 +20,7 @@ BGJSJavaWrapper::~BGJSJavaWrapper () {
 		JNIEnv* env = JNU_GetEnv();
 		env->DeleteGlobalRef(_javaObject);
 	}
-	if (!_jsObject.IsEmpty()) {
-		_jsObject.Dispose();
-	}
+	_jsObject.Reset();
 }
 /*
 extern "C" {
@@ -97,7 +95,7 @@ bool BGJSJavaWrapper::apply (Local<Object> &v8obj, jobject &object, jclass &claz
 	// Iterate through args, adding each element to our list
 	for(unsigned int j = 0; j < props->Length(); j++) {
 		Handle<Value> propName = props->Get(j);
-		String::AsciiValue keyName (propName->ToString());
+		String::Utf8Value keyName (propName->ToString());
 		Local<Value> val = v8obj->Get(propName);
 
 		if (env->ExceptionCheck()) {
@@ -410,8 +408,8 @@ bool BGJSJavaWrapper::jsValToJavaVal (char spec, jvalue &jv, Local<Value> &arg, 
 					return false;
 				}
 				Local<v8::Function> callback = Local<Function>::Cast(arg);
-				Persistent<Function> thisFn = Persistent<Function>::New(callback);
-				jlong thisPtr = (jlong)(*thisFn);
+				Persistent<Function>* thisFn = new Persistent<Function>(Isolate::GetCurrent(), callback);
+				jlong thisPtr = (jlong)(thisFn);
 				jv.j = thisPtr;
 				break;
 			}
@@ -491,16 +489,17 @@ bool BGJSJavaWrapper::jsValToJavaVal (char spec, jvalue &jv, Local<Value> &arg, 
 	return true;
 }
 
-Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaMethodName, const char* returnType,
-		const bool isStatic, const v8::Arguments& args, bool (*f)(const char*, const char*, int, char**)) {
-	HandleScope scope;
+void BGJSJavaWrapper::jsToJava (v8::Isolate* isolate, const char *argsSpec, const char* javaMethodName, const char* returnType,
+		const bool isStatic, const v8::FunctionCallbackInfo<v8::Value>& args, bool (*f)(const char*, const char*, int, char**)) {
+	EscapableHandleScope scope(isolate);
 	int len = strlen(argsSpec);
 	int argCount = getArgCount (argsSpec, len);
 
 	JNIEnv* env = JNU_GetEnv();
 	if (env == NULL) {
-		LOGE("Cannot execute AJAX request with no envCache");
-		return v8::Undefined();
+		LOGE("Cannot execute jsToJava with no envCache");
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	if (env->PushLocalFrame(100) != 0) {
 		LOGD ("jsToJava: Cannot create local stack frame");
@@ -532,7 +531,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 		if (isArray) {
 			if (!(arg->IsArray())) {
 				snprintf (errBuf, 511, "jsToJavaVoid: Param %u is not of type Array", i);
-				return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+				isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+				args.GetReturnValue().SetUndefined();
+				return;
 			}
 		}
 
@@ -540,10 +541,12 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 			javaSig.append("J");
 			if (args.This().IsEmpty()) {
 				snprintf (errBuf, 511, "jsToJavaVoid: Param %u wants This object, but it is empty", i);
-				return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+				isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+				args.GetReturnValue().SetUndefined();
+                return;
 			}
-			Persistent<Object> thisObj = Persistent<Object>::New(args.This());
-			jlong thisPtr = (jlong)(*thisObj);
+			Persistent<Object>* thisObj = new Persistent<Object>(isolate, args.This());
+			jlong thisPtr = (jlong)(thisObj);
 			jv.j = thisPtr;
 			javaArgs[javaIndex] = jv;
 		} else if (spec == ']') {
@@ -553,7 +556,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 
 			if (!res) {
 				if (!isOptional) {
-					return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+				    // TODO: This errBuf seemed uninitialed, added error message
+					isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+					return;
 				}
 			}
 		}
@@ -576,20 +581,22 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 
 	}
 
-
-
-	Handle<Value> result = v8::Undefined();
+	Local<Value> result = v8::Undefined(isolate);
 
 
 	if (env->ExceptionCheck()) {
 		LOGE("jsToJava: Exception before GetObjectClass");
-		return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("jsToJava: Exception before GetObjectClass")));
+		isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "jsToJava: Exception before GetObjectClass")));
+		args.GetReturnValue().SetUndefined();
+        return;
 	}
 	jclass clazz = env->GetObjectClass(_javaObject);
 
 	if (env->ExceptionCheck()) {
 		LOGE("jsToJava: Exception after GetObjectClass");
-		return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("jsToJava: Exception after GetObjectClass")));
+		isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "jsToJava: Exception after GetObjectClass")));
+		args.GetReturnValue().SetUndefined();
+        return;
 	}
 
 	if (strlen(returnType) == 1) {
@@ -608,7 +615,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 					if (env->ExceptionCheck()) {
 						env->ExceptionClear();
 					}
-					return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+					isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+					args.GetReturnValue().SetUndefined();
+                    return;
 				}
 
 				if (isStatic) {
@@ -627,7 +636,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 					if (env->ExceptionCheck()) {
 						env->ExceptionClear();
 					}
-					return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+					isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+					args.GetReturnValue().SetUndefined();
+                    return;
 				}
 
 				jboolean res;
@@ -636,7 +647,7 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 				} else {
 					res = env->CallBooleanMethodA(_javaObject, methodId, javaArgs);
 				}
-				result = Boolean::New(res);
+				result = Boolean::New(isolate, res);
 				break;
 			}
 			case 'f': { // long as pointer to v8 function
@@ -648,7 +659,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 					if (env->ExceptionCheck()) {
 						env->ExceptionClear();
 					}
-					return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+					isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+					args.GetReturnValue().SetUndefined();
+                    return;
 				}
 
 				jlong ptr = 0;
@@ -660,7 +673,9 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 
 				if (env->ExceptionCheck()) {
 					LOGE("jsToJava: Exception after CallMethod");
-					return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("jsToJava: Exception after CallMethod")));
+					isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "jsToJava: Exception after CallMethod")));
+					args.GetReturnValue().SetUndefined();
+                    return;
 				}
 
 				//LOGD("Returned long %llu", ptr);
@@ -668,17 +683,21 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 				void* realPtr = (void*)ptr;
 
 				BGJSJavaWrapper* wrapper = (BGJSJavaWrapper*)realPtr;
-				result = wrapper->_jsObject;
+				result = Local<Object>::New(isolate, wrapper->_jsObject);
 				break;
 			}
 			default: {
 				snprintf (errBuf, 511, "jsToJavaVoid: Don't know how to return type %s", returnType);
-				return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New(errBuf)));
+				isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, errBuf)));
+				args.GetReturnValue().SetUndefined();
+                return;
 			}
 		}
 		if (env->ExceptionCheck()) {
 			LOGE("jsToJava: Exception after CallMethod");
-			return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("jsToJava: Exception after CallMethod")));
+			isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "jsToJava: Exception after CallMethod")));
+			args.GetReturnValue().SetUndefined();
+            return;
 		}
 	}
 
@@ -686,5 +705,5 @@ Handle<Value> BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaM
 	env->PopLocalFrame(NULL);
 	free (javaArgs);
 
-	return scope.Close(result);
+	args.GetReturnValue().Set(scope.Escape(result));
 }

@@ -28,7 +28,8 @@ static void checkGlError(const char* op) {
 }
 
 
-void getWidth(Local<String> property, const AccessorInfo &info) {
+void getWidth(Local<String> property,
+              		const v8::PropertyCallbackInfo<Value>& info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -36,14 +37,15 @@ void getWidth(Local<String> property, const AccessorInfo &info) {
 #ifdef DEBUG
 	LOGD("getWidth %u", value);
 #endif
-	return Integer::New(value);
+	info.GetReturnValue().Set(value);
 }
 
 void setWidth(Local<String> property, Local<Value> value,
-		const AccessorInfo& info) {
+              		const v8::PropertyCallbackInfo<void>& info) {
 }
 
-void getHeight(Local<String> property, const AccessorInfo &info) {
+void getHeight(Local<String> property,
+               		const v8::PropertyCallbackInfo<Value>& info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -51,10 +53,11 @@ void getHeight(Local<String> property, const AccessorInfo &info) {
 #ifdef DEBUG
 	LOGD("getHeight %u", value);
 #endif
-	return Integer::New(value);
+	info.GetReturnValue().Set(value);
 }
 
-void getPixelRatio(Local<String> property, const AccessorInfo &info) {
+void getPixelRatio(Local<String> property,
+                   		const v8::PropertyCallbackInfo<Value>& info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -63,15 +66,15 @@ void getPixelRatio(Local<String> property, const AccessorInfo &info) {
 #ifdef DEBUG
 	LOGD("getPixelRatio %f", value);
 #endif
-	return Number::New(value);
+	info.GetReturnValue().Set(value);
 }
 
 void setPixelRatio(Local<String> property, Local<Value> value,
-		const AccessorInfo& info) {
+        const v8::PropertyCallbackInfo<void>& info) {
 }
 
 void setHeight(Local<String> property, Local<Value> value,
-		const AccessorInfo& info) {
+        const v8::PropertyCallbackInfo<void>& info) {
 	Local<Object> self = info.Holder();
 	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
 	void* ptr = wrap->Value();
@@ -90,7 +93,8 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Handle<Object> func = args[1]->ToObject();
 		if (func->IsFunction()) {
 			String::Utf8Value eventUtf8(args[0]->ToString());
-			v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > funcPersist(isolate, func);
+			// v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > funcPersist(isolate, func);
+			v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* funcPersist = new v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >(isolate, func);
 			const char *event = *eventUtf8;
 			if (strcmp(event, "event") == 0) {
 				view->_cbEvent.push_back(funcPersist);
@@ -106,7 +110,8 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	args.GetReturnValue().SetUndefined();
 }
 
-BGJSView::BGJSView(Isolate* isolate, BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
+BGJSView::BGJSView(Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
+HandleScope scope(isolate);
 	opened = false;
 	_contentObj = 0;
 
@@ -120,37 +125,41 @@ BGJSView::BGJSView(Isolate* isolate, BGJSContext *ctx, float pixelRatio, bool do
 	bgjsglft->SetClassName(String::NewFromUtf8(isolate, "BGJSView"));
 	v8::Local<v8::ObjectTemplate> bgjsgl = bgjsglft->InstanceTemplate();
 	bgjsgl->SetInternalFieldCount(1);
-	bgjsgl->SetAccessor(String::New("width"), getWidth, setWidth);
-	bgjsgl->SetAccessor(String::New("height"), getHeight, setHeight);
-	bgjsgl->SetAccessor(String::New("devicePixelRatio"), getPixelRatio, setPixelRatio);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "width"), getWidth, setWidth);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "height"), getHeight, setHeight);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "devicePixelRatio"), getPixelRatio, setPixelRatio);
 
 	// bgjsgl->SetAccessor(String::New("magnifierPoint"), getMagnifierPoint, setMagnifierPoint);
 
 	NODE_SET_METHOD(bgjsgl, "on", makeStaticCallableFunc(BGJSView::js_view_on));
 
-	this->jsViewOT = Persistent<v8::ObjectTemplate>::New(bgjsgl);
+	this->jsViewOT.Reset(isolate, bgjsgl);
 }
 
-Handle<Value> BGJSView::startJS(const char* fnName, const char* configJson, Handle<Value> uiObj, long configId, bool hasIntradayQuotes) {
-	HandleScope scope;
+Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
+        const char* configJson, Handle<Value> uiObj, long configId, bool hasIntradayQuotes) {
+    v8::Locker l(isolate);
+    EscapableHandleScope scope(isolate);
 
 	Handle<Value> config;
 
 	if (configJson) {
-		config = String::New(configJson);
+		config = String::NewFromUtf8(isolate, configJson);
 	} else {
-		config = v8::Undefined();
+		config = v8::Undefined(isolate);
 	}
 
 	// bgjsgl->Set(String::New("log"), FunctionTemplate::New(BGJSGLModule::log));
-	Local<Object> objInstance = this->jsViewOT->NewInstance();
-	objInstance->SetInternalField(0, External::New(this));
+	Local<Object> objInstance = (*reinterpret_cast<Local<ObjectTemplate>*>(&this->jsViewOT))->NewInstance();
+	objInstance->SetInternalField(0, External::New(isolate, this));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
-	this->_jsObj = Persistent<Object>::New(objInstance);
+	this->_jsObj.Reset(isolate, objInstance);
 
-	Handle<Value> argv[5] = { uiObj, this->_jsObj, config, Number::New(configId), Number::New(hasIntradayQuotes) };
+	Handle<Value> argv[5] = { uiObj, Local<Object>::New(isolate, this->_jsObj), config, Number::New(isolate, configId),
+	    Number::New(isolate, hasIntradayQuotes) };
 
-	Handle<Value> res = this->_jsContext->callFunction(_jsContext->_context->Global(), fnName, 5,
+	Local<Value> res = this->_jsContext->callFunction(isolate,
+	        (*reinterpret_cast<Local<Context>*>(&_jsContext->_context))->Global(), fnName, 5,
 			argv);
 	if (res->IsNumber()) {
 		_contentObj = res->ToNumber()->Value();
@@ -160,15 +169,16 @@ Handle<Value> BGJSView::startJS(const char* fnName, const char* configJson, Hand
 	} else {
 		LOGI ("Did not receive a return id from startJS");
 	}
-	return scope.Close(res);
+	return scope.Escape(res);
 }
 
-void BGJSView::sendEvent(Handle<Object> eventObjRef) {
-	TryCatch trycatch;
-	HandleScope scope;
+void BGJSView::sendEvent(Isolate* isolate, Handle<Object> eventObjRef) {
 	if (!opened) {
 		return;
 	}
+
+	TryCatch trycatch;
+	HandleScope scope (isolate);
 
 	Handle<Value> args[] = { eventObjRef };
 
@@ -177,29 +187,36 @@ void BGJSView::sendEvent(Handle<Object> eventObjRef) {
 	// eventObjRef->Set(String::New("target"))
 
 
-	for (std::vector<Persistent<Object> >::size_type i = 0; i < count; i++) {
+	for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
 		if (!opened) {
 			return;
 		}
-		if (*_cbEvent[i]) {
-			Handle<Value> result = _cbEvent[i]->CallAsFunction(_cbEvent[i], 1, args);
+
+		Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = _cbEvent[i];
+
+
+		// if (!cb->isEmpty()) {
+		    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
+			Handle<Value> result = callback->CallAsFunction(callback, 1, args);
 			if (result.IsEmpty()) {
 				BGJSContext::ReportException(&trycatch);
 			}
-		}
+		// }
 	}
 }
 
-void BGJSView::call(std::vector<Persistent<Object> > &list) {
+void BGJSView::call(Isolate* isolate, std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*> &list) {
 	TryCatch trycatch;
-	HandleScope scope;
+	HandleScope scope(isolate);
 
 	Handle<Value> args[] = { };
 
 	const int count = list.size();
 
-	for (std::vector<Persistent<Object> >::size_type i = 0; i < count; i++) {
-		Handle<Value> result = list[i]->CallAsFunction(list[i], 0, args);
+	for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
+	    Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = list[i];
+	    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
+		Local<Value> result = callback->CallAsFunction(callback, 0, args);
 		if (result.IsEmpty()) {
 			BGJSContext::ReportException(&trycatch);
 		}
@@ -210,26 +227,24 @@ BGJSView::~BGJSView() {
 	opened = false;
 	// Dispose of permanent references to event listeners
 	while (!_cbClose.empty()) {
-		v8::Persistent<v8::Object> item = _cbClose.back();
+		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbClose.back();
 		_cbClose.pop_back();
-		item.Dispose();
+		item->Reset();
 	}
 	while (!_cbResize.empty()) {
-		v8::Persistent<v8::Object> item = _cbResize.back();
+		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbResize.back();
 		_cbResize.pop_back();
-		item.Dispose();
+		item->Reset();
 	}
 	while (!_cbEvent.empty()) {
-		v8::Persistent<v8::Object> item = _cbEvent.back();
+		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbEvent.back();
 		_cbEvent.pop_back();
-		item.Dispose();
+		item->Reset();
 	}
 	while (!_cbRedraw.empty()) {
-		v8::Persistent<v8::Object> item = _cbRedraw.back();
+		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbRedraw.back();
 		_cbRedraw.pop_back();
-		item.Dispose();
+		item->Reset();
 	}
-	if (*this->jsViewOT && !this->jsViewOT.IsEmpty()) {
-		this->jsViewOT.Dispose();
-	}
+	this->jsViewOT.Reset();
 }

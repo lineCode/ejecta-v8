@@ -7,7 +7,7 @@
 // class BGJSContext;
 
 #define NODE_SET_METHOD(obj, name, callback)                              \
-  obj->Set(v8::String::NewSymbol(name),                                   \
+  obj->Set(v8::String::NewFromUtf8(isolate, name),                                   \
            callback->GetFunction())
 
 #define LOG_TAG "BGJSClass"

@@ -17,14 +17,14 @@ typedef struct __tagAnimationFrameRequest {
 
 class BGJSGLView : public BGJSView {
 public:
-	BGJSGLView(BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip);
+	BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip);
 	virtual ~BGJSGLView();
 	virtual void prepareRedraw();
 	virtual void endRedraw();
 	void endRedrawNoSwap();
 	void setTouchPosition(int x, int y);
 	void swapBuffers();
-	void resize (int width, int height, bool resizeOnly);
+	void resize (v8::Isolate* isolate, int width, int height, bool resizeOnly);
 	void close ();
 	void requestRefresh();
 	int requestAnimationFrameForView(v8::Isolate* isolate, v8::Handle<v8::Object> cb,

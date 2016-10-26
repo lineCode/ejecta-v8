@@ -13,8 +13,8 @@ class BGJSGLModule : public BGJSModule {
 
 public:
 	BGJSGLModule();
-	v8::Handle<v8::Value> initWithContext(BGJSContext* context);
-	static void doRequire (v8::Handle<v8::Object> target);
+	v8::Local<v8::Value> initWithContext(v8::Isolate* isolate, const BGJSContext* context);
+	static void doRequire (v8::Isolate* isolate, v8::Handle<v8::Object> target);
 	static void create(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void js_canvas_constructor(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value>& args);

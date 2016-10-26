@@ -34,8 +34,8 @@ static void checkGlError(const char* op) {
 #endif
 }
 
-BGJSGLView::BGJSGLView(BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) :
-		BGJSView(ctx, pixelRatio, doNoClearOnFlip) {
+BGJSGLView::BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) :
+		BGJSView(isolate, ctx, pixelRatio, doNoClearOnFlip) {
 
 	_firstFrameRequest = 0;
 	_nextFrameRequest = 0;
@@ -109,7 +109,7 @@ void BGJSGLView::swapBuffers() {
 	// checkGlError("eglSwapBuffers");
 }
 
-void BGJSGLView::resize(int widthp, int heightp, bool resizeOnly) {
+void BGJSGLView::resize(Isolate* isolate, int widthp, int heightp, bool resizeOnly) {
 #ifdef DEBUG
 	LOGI("Resize to %dx%d", widthp, heightp);
 #endif	
@@ -123,11 +123,13 @@ void BGJSGLView::resize(int widthp, int heightp, bool resizeOnly) {
 #endif
 	if (count > 0) {
 		TryCatch trycatch;
-		HandleScope scope;
+		HandleScope scope (isolate);
 		Handle<Value> args[0];
-		for (std::vector<Persistent<Object> >::size_type i = 0; i < count;
-				i++) {
-			Handle<Value> result = (*reinterpret_cast<Local<Object>*>(&_cbResize[i]))->CallAsFunction(_jsObj, 0, args);
+		for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
+        	Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = _cbResize[i];
+        	Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
+
+			Handle<Value> result = callback->CallAsFunction(callback, 0, args);
 
 			if (result.IsEmpty()) {
 				BGJSContext::ReportException(&trycatch);
@@ -147,7 +149,7 @@ void BGJSGLView::close() {
 		}
 	}
 
-	call(_cbClose);
+	call(Isolate::GetCurrent(), _cbClose);
 }
 
 void BGJSGLView::requestRefresh() {
@@ -165,8 +167,7 @@ void BGJSGLView::requestRefresh() {
 #endif
 }
 
-int BGJSGLView::requestAnimationFrameForView(Handle<Object> cb, Handle<Object> thisObj,
-		int id, Isolate* isolate) {
+int BGJSGLView::requestAnimationFrameForView(Isolate* isolate, Handle<Object> cb, Handle<Object> thisObj, int id) {
 	HandleScope scope(isolate);
 	// make sure there is still room in the buffer
 #ifdef DEBUG

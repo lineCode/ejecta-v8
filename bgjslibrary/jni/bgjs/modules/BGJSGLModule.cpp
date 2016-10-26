@@ -80,8 +80,8 @@ public:
 class BGJSCanvasGL {
 public:
 	BGJSGLView* _view;
-	BGJSContext2dGL* _context2d;
-	BGJSContext* _context;
+	const BGJSContext2dGL* _context2d;
+	const BGJSContext* _context;
 
 	static void getWidth(Local<String> property,
 			const v8::PropertyCallbackInfo<Value>& info);
@@ -963,8 +963,7 @@ static void js_context_destruct(const v8::WeakCallbackData<v8::Object, BGJSConte
 	// TODO: Also destroy canvas instance?
 }
 
-void BGJSGLModule::doRequire(v8::Handle<v8::Object> target) {
-    Isolate* isolate = Isolate::GetCurrent();
+void BGJSGLModule::doRequire(v8::Isolate* isolate, v8::Handle<v8::Object> target) {
 	v8::Locker l(isolate);
 	HandleScope scope(isolate);
 
@@ -1097,10 +1096,14 @@ void BGJSGLModule::doRequire(v8::Handle<v8::Object> target) {
 	target->Set(String::NewFromUtf8(isolate, "exports"), exports);
 }
 
-v8::Handle<v8::Value> BGJSGLModule::initWithContext(BGJSContext* context) {
-	doRegister(context);
+v8::Local<v8::Value> BGJSGLModule::initWithContext(Isolate* isolate, const BGJSContext* context) {
+	v8::Locker l(isolate);
+	EscapableHandleScope scope(isolate);
+
+	doRegister(isolate, context);
 
 	this->_canvasContext = new BGJSCanvasContext(500, 500);
+	return v8::Undefined(isolate);
 }
 
 BGJSGLModule::BGJSGLModule() :
@@ -1129,7 +1132,7 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_createGL(JNIEnv * en
 	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
     Context::Scope context_scope(v8Context);
 
-	BGJSGLView *view = new BGJSGLView(BGJSGLModule::_bgjscontext, pixelRatio, noClearOnFlip);
+	BGJSGLView *view = new BGJSGLView(isolate, BGJSGLModule::_bgjscontext, pixelRatio, noClearOnFlip);
 	view->setJavaGl(env, env->NewGlobalRef(javaGlView));
 
 	// Register GLView with context so that cancelAnimationRequest works.
@@ -1157,7 +1160,7 @@ JNIEXPORT int JNICALL Java_ag_boersego_bgjs_ClientAndroid_init(JNIEnv * env,
 #ifdef DEBUG
 		LOGD("Resizing from %dx%d to %dx%d, resizeOnly %i", view->width, view->height, width, height, (int)(view->opened));
 #endif
-		view->resize(width, height, view->opened);
+		view->resize(isolate, width, height, view->opened);
 	}
 	Handle<Value> uiObj;
 
@@ -1166,7 +1169,7 @@ JNIEXPORT int JNICALL Java_ag_boersego_bgjs_ClientAndroid_init(JNIEnv * env,
 		const char* cbStr = env->GetStringUTFChars(callbackName, NULL);
 
 		LOGI("setupGraphics(%s)", cbStr);
-		Local<Value> res = view->startJS(cbStr, NULL, v8::Undefined(isolate), 0, false);
+		Local<Value> res = view->startJS(isolate, cbStr, NULL, v8::Undefined(isolate), 0, false);
 		view->opened = true;
 		env->ReleaseStringUTFChars(callbackName, cbStr);
 
@@ -1208,7 +1211,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_redraw(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jlong jsPtr) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	BGJSGLView *view = (BGJSGLView*) jsPtr;
-	return view->call(view->_cbRedraw);
+	return view->call(Isolate::GetCurrent(), view->_cbRedraw);
 }
 
 
@@ -1258,7 +1261,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 
 	eventObjRef->Set(String::NewFromUtf8(isolate, "touches"), touchesArray);
 
-	view->sendEvent(eventObjRef);
+	view->sendEvent(isolate, eventObjRef);
 
 	// Cleanup JNI stuff
 	env->ReleaseFloatArrayElements(xArr, x, 0);

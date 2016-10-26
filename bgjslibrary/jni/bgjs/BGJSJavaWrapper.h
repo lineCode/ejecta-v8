@@ -22,8 +22,8 @@ public:
 			char* containingObject, bool (*f)(const char*, const char*, int, char**));
 	bool jsValToJavaVal (char spec, jvalue &jv, v8::Local<v8::Value> &arg, bool isArray, JNIEnv* env,
 			std::string &javaSig, int argNum, char* errBuf, int errBufLen, bool isOptional, bool (*f)(const char*, const char*, int, char**));
-	v8::Handle<v8::Value> jsToJava (const char* argsSpec, const char* javaMethodName,
-			const char* returnType, const bool isStatic, const v8::FunctionCallback& info, bool (*f)(const char*, const char*, int, char**));
+	void jsToJava (v8::Isolate* isolate, const char* argsSpec, const char* javaMethodName,
+			const char* returnType, const bool isStatic, const v8::FunctionCallbackInfo<v8::Value>& args, bool (*f)(const char*, const char*, int, char**));
 	int getArgCount (const char* argsSpec, const int argsStrLen);
 	~BGJSJavaWrapper();
 	BGJSContext* _context;

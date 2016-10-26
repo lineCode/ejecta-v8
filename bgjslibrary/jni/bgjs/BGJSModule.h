@@ -16,18 +16,19 @@ protected:
 	// methods
 public:
 	// attributes
-	static BGJSContext* _bgjscontext;
+	static const BGJSContext* _bgjscontext;
 
 	// members
 	BGJSModule(const char* name);
 	std::string getName() const;
-	static void doRegister(BGJSContext *context);
+	static void doRegister(v8::Isolate* isolate, const BGJSContext *context);
 	virtual ~BGJSModule() = 0;
 
 	virtual bool initialize() = 0;
-	virtual v8::Handle<v8::Value> initWithContext(BGJSContext* context) = 0;
+	virtual v8::Local<v8::Value> initWithContext(v8::Isolate* isolate, const BGJSContext* context) = 0;
 
-	static void javaToJsField (const char* fieldName, const char fieldType, JNIEnv *env, jobject &jobj, v8::Handle<v8::Object> &jsObj);
+	static void javaToJsField (v8::Isolate* isolate, const char* fieldName, const char fieldType,
+	        JNIEnv *env, jobject &jobj, v8::Handle<v8::Object> &jsObj);
 
 };
 
