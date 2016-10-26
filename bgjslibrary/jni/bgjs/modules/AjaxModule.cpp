@@ -12,11 +12,6 @@ using namespace v8;
 AjaxModule::AjaxModule() : BGJSModule ("ajax") {
 }
 
-static Handle<Value> BlaCallback(const Arguments& args) {
-
-	return v8::Undefined();
-}
-
 bool AjaxModule::initialize() {
 
 	return true;
@@ -33,7 +28,7 @@ void AjaxModule::doRequire (v8::Isolate* isolate, v8::Handle<v8::Object> target)
 	/* exports->Set(String::New("ajax"), ft->GetFunction());
 	exports->Set(String::New("bla"), String::New("test")); */
 
-	target->Set(String::New("exports"), ft->GetFunction());
+	target->Set(String::NewFromUtf8(isolate, "exports"), ft->GetFunction());
 }
 
 v8::Local<v8::Value> AjaxModule::initWithContext(v8::Isolate* isolate, const BGJSContext* context)
@@ -51,7 +46,9 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	v8::Locker l(isolate);
 	if (args.Length() < 1) {
 		LOGE("Not enough parameters for ajax");
-		return v8::Undefined();
+		isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "Not enough parameters for ajax")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
 	/* Local<StackTrace> str = StackTrace::CurrentStackTrace(15);
@@ -63,17 +60,17 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	// Get callbacks
 	Local<Function> callback = Local<Function>::Cast(
-			options->Get(String::NewStringFromUtf8(isolate, "success")));
+			options->Get(String::NewFromUtf8(isolate, "success")));
 	Local<Function> errCallback = Local<Function>::Cast(
 				options->Get(String::NewFromUtf8(isolate, "error")));
 
-	Persistent<Function>* callbackPers = new Persistent<Function>::New(isolate, callback);
+	Persistent<Function>* callbackPers = new Persistent<Function>(isolate, callback);
 	Persistent<Function>* errorPers;
-	if (!errCallback.IsEmpty() && !(errCallback.IsUndefined() || errCallback.isNull())  {
-		errorPers = new Persistent<Function>::New(isolate, errCallback);
+	if (!errCallback.IsEmpty() && !errCallback->IsUndefined())  {
+		errorPers = new Persistent<Function>(isolate, errCallback);
 	}
 	// Persist the this object
-	Persistent<Object>* thisObj = Persistent<Object>::New(isolate, args.This());
+	Persistent<Object>* thisObj = new Persistent<Object>(isolate, args.This());
 
 	// Get url
 	Local<String> url = Local<String>::Cast(options->Get(String::NewFromUtf8(isolate, "url")));
@@ -95,17 +92,18 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	JNIEnv* env = JNU_GetEnv();
 	if (env == NULL) {
 		LOGE("Cannot execute AJAX request with no envCache");
-		return v8::Undefined(isolate);
+        args.GetReturnValue().SetUndefined();
+        return;
 	}
 	urlStr = env->NewStringUTF(*urlLocal);
-	if (!data.IsUndefined()) {
+	if (!data->IsUndefined()) {
 		String::Utf8Value dataLocal(data);
 		dataStr = env->NewStringUTF(*dataLocal);
 	} else {
 		dataStr = 0;
 	}
 
-	if (!method.IsUndefined()) {
+	if (!method->IsUndefined()) {
 		String::Utf8Value methodLocal(method);
 		methodStr = env->NewStringUTF(*methodLocal);
 	} else {
@@ -125,7 +123,7 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 #endif
 
-	args.getReturnValue().SetUndefined();
+	args.GetReturnValue().SetUndefined();
 }
 
 #ifdef ANDROID
@@ -149,6 +147,7 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	TryCatch trycatch;
 
 	Persistent<Object>* thisObj = static_cast<Persistent<Object>*>((void*)thisPtr);
+	Local<Object> thisObjLocal = (*reinterpret_cast<Local<Object>*>(thisObj));
 	Persistent<Function>* errorP;
 	if (errorCb) {
 		errorP = static_cast<Persistent<Function>*>((void*)errorCb);
@@ -159,12 +158,12 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	int argcount = 1;
 
 	if (dataStr == 0) {
-		argarray[0] = v8::Null();
+		argarray[0] = v8::Null(isolate);
 	} else {
 		nativeString = env->GetStringUTFChars(dataStr, 0);
 		Handle<Value> resultObj;
 		if (processData) {
-			resultObj = context->JsonParse(thisObj,
+			resultObj = context->JsonParse(thisObjLocal,
 				String::NewFromUtf8(isolate,nativeString));
 		} else {
 			resultObj = String::NewFromUtf8(isolate, nativeString);
@@ -176,15 +175,14 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 
 	Handle<Value> result;
 
-    Local<Object> thisObjLocal = (*reinterpret_cast<Local<Object>*>(thisObj));
 	if (success) {
-		result = (*reinterpret_cast<Local<Object>*>(callbackP))->Call(thisObjLocal, argcount, argarray);
+		result = (*reinterpret_cast<Local<Function>*>(callbackP))->Call(thisObjLocal, argcount, argarray);
 	} else {
-		if (!errorP.IsEmpty()) {
-			result = (*reinterpret_cast<Local<Object>*>(errorP))->Call(thisObjLocal, argcount, argarray);
+		if (!errorP->IsEmpty()) {
+			result = (*reinterpret_cast<Local<Function>*>(errorP))->Call(thisObjLocal, argcount, argarray);
 		} else {
 			LOGI("Error signaled by java code but no error callback set");
-			result = v8::Undefined();
+			result = v8::Undefined(isolate);
 		}
 	}
 	if (result.IsEmpty()) {

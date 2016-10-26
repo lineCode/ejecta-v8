@@ -33,7 +33,7 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_js_ClientAndroid_callJSPtr(
 
 } */
 
-BGJSJavaWrapper::BGJSJavaWrapper (BGJSContext* context, JNIEnv* env, jobject javaObject) {
+BGJSJavaWrapper::BGJSJavaWrapper (const BGJSContext* context, JNIEnv* env, jobject javaObject) {
 	_context = context;
 	_javaObject = env->NewGlobalRef(javaObject);
 	_jStringClass = env->FindClass("java/lang/String");

@@ -10,7 +10,7 @@ class BGJSJavaWrapper {
 public:
 	v8::Persistent<v8::Object> _jsObject;
 	BGJSJavaWrapper ();
-	BGJSJavaWrapper (BGJSContext* context, JNIEnv* env, jobject javaObject);
+	BGJSJavaWrapper (const BGJSContext* context, JNIEnv* env, jobject javaObject);
 
 	bool coerceArgToString (JNIEnv* env, jobject &object, jclass& clazz, const char *keyName, const char *valAsString);
 
@@ -26,7 +26,7 @@ public:
 			const char* returnType, const bool isStatic, const v8::FunctionCallbackInfo<v8::Value>& args, bool (*f)(const char*, const char*, int, char**));
 	int getArgCount (const char* argsSpec, const int argsStrLen);
 	~BGJSJavaWrapper();
-	BGJSContext* _context;
+	const BGJSContext* _context;
 	jobject _javaObject;
 };
 
