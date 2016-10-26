@@ -1,29 +1,6 @@
 // Copyright 2013 the V8 project authors. All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of Google Inc. nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef V8CONFIG_H_
 #define V8CONFIG_H_
@@ -198,7 +175,12 @@
 //  V8_HAS_ATTRIBUTE_VISIBILITY         - __attribute__((visibility)) supported
 //  V8_HAS_ATTRIBUTE_WARN_UNUSED_RESULT - __attribute__((warn_unused_result))
 //                                        supported
+//  V8_HAS_BUILTIN_CLZ                  - __builtin_clz() supported
+//  V8_HAS_BUILTIN_CTZ                  - __builtin_ctz() supported
 //  V8_HAS_BUILTIN_EXPECT               - __builtin_expect() supported
+//  V8_HAS_BUILTIN_POPCOUNT             - __builtin_popcount() supported
+//  V8_HAS_BUILTIN_SADD_OVERFLOW        - __builtin_sadd_overflow() supported
+//  V8_HAS_BUILTIN_SSUB_OVERFLOW        - __builtin_ssub_overflow() supported
 //  V8_HAS_DECLSPEC_ALIGN               - __declspec(align(n)) supported
 //  V8_HAS_DECLSPEC_DEPRECATED          - __declspec(deprecated) supported
 //  V8_HAS_DECLSPEC_NOINLINE            - __declspec(noinline) supported
@@ -229,7 +211,12 @@
 # define V8_HAS_ATTRIBUTE_WARN_UNUSED_RESULT \
     (__has_attribute(warn_unused_result))
 
+# define V8_HAS_BUILTIN_CLZ (__has_builtin(__builtin_clz))
+# define V8_HAS_BUILTIN_CTZ (__has_builtin(__builtin_ctz))
 # define V8_HAS_BUILTIN_EXPECT (__has_builtin(__builtin_expect))
+# define V8_HAS_BUILTIN_POPCOUNT (__has_builtin(__builtin_popcount))
+# define V8_HAS_BUILTIN_SADD_OVERFLOW (__has_builtin(__builtin_sadd_overflow))
+# define V8_HAS_BUILTIN_SSUB_OVERFLOW (__has_builtin(__builtin_ssub_overflow))
 
 # define V8_HAS_CXX11_ALIGNAS (__has_feature(cxx_alignas))
 # define V8_HAS_CXX11_STATIC_ASSERT (__has_feature(cxx_static_assert))
@@ -261,7 +248,10 @@
 # define V8_HAS_ATTRIBUTE_WARN_UNUSED_RESULT \
     (!V8_CC_INTEL && V8_GNUC_PREREQ(4, 1, 0))
 
+# define V8_HAS_BUILTIN_CLZ (V8_GNUC_PREREQ(3, 4, 0))
+# define V8_HAS_BUILTIN_CTZ (V8_GNUC_PREREQ(3, 4, 0))
 # define V8_HAS_BUILTIN_EXPECT (V8_GNUC_PREREQ(2, 96, 0))
+# define V8_HAS_BUILTIN_POPCOUNT (V8_GNUC_PREREQ(3, 4, 0))
 
 // g++ requires -std=c++0x or -std=gnu++0x to support C++11 functionality
 // without warnings (functionality used by the macros below).  These modes
@@ -344,24 +334,6 @@ declarator __attribute__((deprecated))
 #endif
 
 
-// A macro to mark variables or types as unused, avoiding compiler warnings.
-#if V8_HAS_ATTRIBUTE_UNUSED
-# define V8_UNUSED __attribute__((unused))
-#else
-# define V8_UNUSED
-#endif
-
-
-// Annotate a function indicating the caller must examine the return value.
-// Use like:
-//   int foo() V8_WARN_UNUSED_RESULT;
-#if V8_HAS_ATTRIBUTE_WARN_UNUSED_RESULT
-# define V8_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else
-# define V8_WARN_UNUSED_RESULT /* NOT SUPPORTED */
-#endif
-
-
 // A macro to provide the compiler with branch prediction information.
 #if V8_HAS_BUILTIN_EXPECT
 # define V8_UNLIKELY(condition) (__builtin_expect(!!(condition), 0))
@@ -389,33 +361,6 @@ declarator __attribute__((deprecated))
 # define V8_DELETE = delete
 #else
 # define V8_DELETE /* NOT SUPPORTED */
-#endif
-
-
-// Annotate a virtual method indicating it must be overriding a virtual
-// method in the parent class.
-// Use like:
-//   virtual void bar() V8_OVERRIDE;
-#if V8_HAS_CXX11_OVERRIDE
-# define V8_OVERRIDE override
-#else
-# define V8_OVERRIDE /* NOT SUPPORTED */
-#endif
-
-
-// Annotate a virtual method indicating that subclasses must not override it,
-// or annotate a class to indicate that it cannot be subclassed.
-// Use like:
-//   class B V8_FINAL : public A {};
-//   virtual void bar() V8_FINAL;
-#if V8_HAS_CXX11_FINAL
-# define V8_FINAL final
-#elif V8_HAS___FINAL
-# define V8_FINAL __final
-#elif V8_HAS_SEALED
-# define V8_FINAL sealed
-#else
-# define V8_FINAL /* NOT SUPPORTED */
 #endif
 
 

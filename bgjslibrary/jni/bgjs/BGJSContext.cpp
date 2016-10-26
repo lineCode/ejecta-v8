@@ -26,8 +26,8 @@
 
 using namespace v8;
 
-v8::Persistent<v8::Context> BGJSInfo::_context;
-v8::Persistent<v8::ObjectTemplate> BGJSInfo::_global;
+v8::Eternal<v8::Context> BGJSInfo::_context;
+v8::Eternal<v8::ObjectTemplate> BGJSInfo::_global;
 BGJSContext* BGJSInfo::_jscontext;
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
@@ -526,7 +526,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		return;
 	}
 
-    Local<Context> context = Context::New(isolate, NULL, Local<ObjectTemplate>::New(isolate, BGJSInfo::_global));
+    Local<Context> context = Context::New(isolate, NULL, Local<ObjectTemplate>::New(isolate, BGJSInfo::_global.Get(isolate)));
     Persistent<Context, CopyablePersistentTraits<Value> > contextPersistent(isolate, context);
 
 	Local<Array> keys;
@@ -580,7 +580,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			 * so we re-propagate a TerminationException explicitly here if necesary. */
 			if (try_catch.CanContinue())
 				return;
-			v8::V8::TerminateExecution();
+			v8::V8::TerminateExecution(isolate);
 
 			free((void*) buf);
 			buf = NULL;
@@ -677,7 +677,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 	v8::Locker l(isolate);
 	HandleScope scope(isolate);
 
-	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context));
+	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context.Get(isolate)));
 
 	TryCatch trycatch;
 	bool didDraw = false;
@@ -935,7 +935,7 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
 
-	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context));
+	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context.Get(isolate)));
 
 	const char* buf = this->_client->loadFile(path);
 
@@ -978,7 +978,7 @@ BGJSContext::BGJSContext() {
 
 	// Create a template for the global object where we set the
 	// built-in global functions.
-	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+	v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
 
 	// Add methods to console function
 	v8::Local<v8::FunctionTemplate> console = v8::FunctionTemplate::New(isolate);
@@ -1017,7 +1017,7 @@ BGJSContext::BGJSContext() {
 			v8::FunctionTemplate::New(isolate, BGJSContext::js_global_clearInterval));
 
 	// Also, persist the global object template so we can add stuff here later when calling require
-	BGJSInfo::_global.Reset(isolate, global);
+	BGJSInfo::_global.Set(isolate, global);
 
 	LOGD("v8 version %s", V8::GetVersion());
 }
@@ -1034,8 +1034,8 @@ void BGJSContext::createContext() {
     // Create a stack-allocated handle scope.
     HandleScope scope(isolate);
 	// Create a new context.
-	BGJSInfo::_context.Reset(isolate, v8::Context::New(isolate, NULL,
-                                      	        Local<ObjectTemplate>::New(isolate, BGJSInfo::_global)));
+	BGJSInfo::_context.Set(isolate, v8::Context::New(isolate, NULL,
+                                      	        Local<ObjectTemplate>::New(isolate, BGJSInfo::_global.Get(isolate))));
 	BGJSInfo::_jscontext = this;
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
@@ -1189,12 +1189,8 @@ void BGJSContext::setLocale(const char* locale, const char* lang,
 
 BGJSContext::~BGJSContext() {
 	LOGI("Cleaning up");
-	_global.Reset();
 	_script.Reset();
 	cloneObjectMethod.Reset();
-
-	// Dispose the persistent context.
-	_context.Reset();
 
 	if (_locale) {
 		free(_locale);

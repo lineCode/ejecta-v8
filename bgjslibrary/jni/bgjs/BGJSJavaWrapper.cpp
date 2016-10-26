@@ -489,8 +489,9 @@ bool BGJSJavaWrapper::jsValToJavaVal (char spec, jvalue &jv, Local<Value> &arg, 
 	return true;
 }
 
-void BGJSJavaWrapper::jsToJava (v8::Isolate* isolate, const char *argsSpec, const char* javaMethodName, const char* returnType,
+void BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaMethodName, const char* returnType,
 		const bool isStatic, const v8::FunctionCallbackInfo<v8::Value>& args, bool (*f)(const char*, const char*, int, char**)) {
+	v8::Isolate* isolate = Isolate::GetCurrent();
 	EscapableHandleScope scope(isolate);
 	int len = strlen(argsSpec);
 	int argCount = getArgCount (argsSpec, len);

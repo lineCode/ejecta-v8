@@ -22,7 +22,7 @@
 
 using namespace v8;
 
-v8::Persistent<v8::Context> BGJSInfo::_context;
+v8::Eternal<v8::Context> BGJSInfo::_context;
 
 #define CREATE_ESCAPABLE_CONTEXT    	v8::Isolate* isolate = Isolate::GetCurrent(); \
 EscapableHandleScope scope(isolate);
