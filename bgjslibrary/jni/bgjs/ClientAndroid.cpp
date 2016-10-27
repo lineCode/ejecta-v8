@@ -36,6 +36,9 @@
 
 using namespace v8;
 
+#include <unistd.h>
+extern unsigned int __page_size = getpagesize();
+
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif

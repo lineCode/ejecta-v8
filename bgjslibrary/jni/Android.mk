@@ -27,10 +27,23 @@ include $(PREBUILT_STATIC_LIBRARY)
 # v8_snapshot
 include $(CLEAR_VARS)
 LOCAL_MODULE := v8-snapshot-prebuilt
-LOCAL_SRC_FILES := libs/$(TARGET_ARCH_ABI)/libv8_snapshot.a
+LOCAL_SRC_FILES := libs/$(TARGET_ARCH_ABI)/libv8_external_snapshot.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 include $(PREBUILT_STATIC_LIBRARY)
 
+# v8_libbase
+include $(CLEAR_VARS)
+LOCAL_MODULE := v8-libbase-prebuilt
+LOCAL_SRC_FILES := libs/$(TARGET_ARCH_ABI)/libv8_libbase.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+include $(PREBUILT_STATIC_LIBRARY)
+
+# v8_libplatform
+include $(CLEAR_VARS)
+LOCAL_MODULE := v8-libplatform-prebuilt
+LOCAL_SRC_FILES := libs/$(TARGET_ARCH_ABI)/libv8_libplatform.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+include $(PREBUILT_STATIC_LIBRARY)
 
 # freetype
 #include $(CLEAR_VARS)
@@ -59,8 +72,8 @@ LOCAL_SRC_FILES		:= bgjs/BGJSContext.cpp bgjs/ClientAndroid.cpp bgjs/BGJSModule.
 
 # $(warning $(subst jni, ., $(wildcard $(LOCAL_PATH)/../../../ejectav8-submodules/*.cpp)))
 
-LOCAL_LDLIBS    := -llog -lGLESv1_CM  -lm -landroid -ljnigraphics -lEGL #-L../libs/armeabi -lv8_base -lv8_snapshot -ljnigraphics
-LOCAL_STATIC_LIBRARIES	:= v8-base-prebuilt v8-snapshot-prebuilt freetype  # libcairo libpixman cpufeatures 
+LOCAL_LDLIBS    := -llog -lGLESv1_CM  -lm -landroid -ljnigraphics -lEGL #-L../libs/armeabi -lv8_base -lv8_snapshot -lv8_libplatform -lv8_libbase -ljnigraphics
+LOCAL_STATIC_LIBRARIES	:= v8-base-prebuilt  v8-libbase-prebuilt v8-libplatform-prebuilt v8-snapshot-prebuilt freetype  # libcairo libpixman cpufeatures 
 
 
 #TARGET_thumb_release_CFLAGS := $(filter-out -ffunction-sections,$(TARGET_thumb_release_CFLAGS))

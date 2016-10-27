@@ -22,7 +22,7 @@
 
 using namespace v8;
 
-v8::Eternal<v8::Context> BGJSInfo::_context;
+// v8::Eternal<v8::Context> BGJSInfo::_context;
 
 #define CREATE_ESCAPABLE_CONTEXT    	v8::Isolate* isolate = Isolate::GetCurrent(); \
 EscapableHandleScope scope(isolate);
@@ -954,7 +954,7 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 	args.GetReturnValue().Set(scope.Escape(jsObj));
 }
 
-static void js_context_destruct(const v8::WeakCallbackData<v8::Object, BGJSContext2dGL>& data) {
+void BGJSGLModule::js_context_destruct(const v8::WeakCallbackData<v8::Object, BGJSContext2dGL>& data) {
 
 	BGJSContext2dGL *context2d = data.GetParameter();
 	context2d->_jsValue.Reset();

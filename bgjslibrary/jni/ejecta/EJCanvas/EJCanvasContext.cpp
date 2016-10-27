@@ -422,7 +422,7 @@ void EJCanvasContext::drawImage (EJTexture *texture, float sx, float sy,
 	float tw = texture->realWidth;
 	float th = texture->realHeight;
 
-	EJColorRGBA color = {{255, 255, 255, 255 * state->globalAlpha}};
+	EJColorRGBA color = {{255, 255, 255, (unsigned char)(255 * state->globalAlpha)}};
 	this->setTexture(texture);
 	this->pushRectX(dx, dy, dw, dh, sx/tw, sy/th, sw/tw, sh/th, color, state->transform);
 }

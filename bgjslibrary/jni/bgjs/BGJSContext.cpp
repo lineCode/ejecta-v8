@@ -968,7 +968,8 @@ BGJSContext::BGJSContext() {
     // Create default isolate just to be sure.
     Isolate* isolate = Isolate::GetCurrent();
     if (!isolate) {
-        isolate = Isolate::New();
+        Isolate::CreateParams create_params;
+        isolate = Isolate::New(create_params);
         isolate->Enter();
     }
 

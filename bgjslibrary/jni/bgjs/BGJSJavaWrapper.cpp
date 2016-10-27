@@ -145,7 +145,7 @@ bool BGJSJavaWrapper::apply (Local<Object> &v8obj, jobject &object, jclass &claz
 					}
 					// apply (subv8, subobject, subclazz, javaClassName, env, *keyName, f);
 				}
-				delete (fieldIdStr);
+				delete[] (fieldIdStr);
 				if (javaClassName) {
 					free (javaClassName);
 					javaClassName = NULL;
