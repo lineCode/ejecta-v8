@@ -184,7 +184,12 @@ public class V8Engine extends Thread implements Handler.Callback {
     }
 
     public void initializeV8(AssetManager assetManager) {
-        mNativePtr = ClientAndroid.initialize(assetManager, this, mLocale, mLang, mTimeZone, mDensity);
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		mNativePtr = ClientAndroid.initialize(assetManager, this, mLocale, mLang, mTimeZone, mDensity);
     }
 
 	@Override

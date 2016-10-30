@@ -1,6 +1,6 @@
 package ag.boersego.bgjs.sample;
 
-import android.app.Activity;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,9 +11,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import ag.boersego.bgjs.ClientAndroid;
-import ag.boersego.bgjs.IV8GL;
 import ag.boersego.bgjs.V8Engine;
-import ag.boersego.bgjs.V8GLSurfaceView;
 import ag.boersego.bgjs.V8TextureView;
 import ag.boersego.bgjs.sample.dummy.DummyContent;
 
@@ -34,11 +32,11 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
      * The dummy content this fragment is presenting.
      */
     private DummyContent.DummyItem mItem;
-    private IV8GL mView;
+    private V8TextureView mView;
     private FrameLayout mRootView;
     private boolean mEngineReady;
     private V8Engine mV8Engine;
-    private int mJSId;
+    private long mJSId;
 
     private static final String TAG = "DemoDetailFragment";
     private String mScriptCb = "startPlasma";
@@ -50,7 +48,7 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
     public DemoDetailFragment() {
     }
 
-    public void onAttach(Activity a) {
+    public void onAttach(Context a) {
         super.onAttach(a);
 
         mV8Engine = V8Engine.getInstance();
@@ -70,7 +68,7 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
         }
     }
 
-    private void initializeV8 (int jsId) {
+    private void initializeV8 (final long jsId) {
         mJSId = jsId;
 
         final float density = getResources().getDisplayMetrics().density;
@@ -93,12 +91,12 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
             final V8TextureView tv = new V8TextureView(getActivity(), mScriptCb, "") {
 
                 @Override
-                public void onGLCreated(int jsId) {
+                public void onGLCreated(long jsId) {
                     initializeV8(jsId);
                 }
 
                 @Override
-                public void onGLRecreated(int jsId) {
+                public void onGLRecreated(long jsId) {
                     onGLCreated(jsId);
                 }
 
@@ -108,13 +106,13 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
                 }
 
                 @Override
-                public void onRenderAttentionNeeded(int jsId) {
+                public void onRenderAttentionNeeded(long jsId) {
 
                 }
             };
-            // tv.doDebug(true);
+            tv.doDebug(true);
             mView = tv;
-        } else {
+        } /* else {
             mView = new V8GLSurfaceView(getActivity(), "viewCreated", "") {
                 @Override
                 public void onGLCreated(int jsId) {
@@ -136,8 +134,9 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
 
                 }
             };
-        }
+        } */
         View v = (View) mView;
+
         mRootView.addView(v, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
