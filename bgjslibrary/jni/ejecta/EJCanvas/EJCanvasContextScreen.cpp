@@ -4,6 +4,8 @@
 #include "NdkMisc.h"
 
 #include "GLcompat.h"
+#include <stdio.h>
+#include <string.h>
 
 // #include "EJApp.h"
 

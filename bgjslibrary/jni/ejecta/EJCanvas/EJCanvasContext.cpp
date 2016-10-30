@@ -5,6 +5,8 @@
 
 #include "NdkMisc.h"
 #define LOG_TAG	"EJCanvasContext"
+#include <stdio.h>
+#include <string.h>
 
 EJVertex CanvasVertexBuffer[EJ_CANVAS_VERTEX_BUFFER_SIZE];
 
@@ -13,7 +15,7 @@ EJVertex CanvasVertexBuffer[EJ_CANVAS_VERTEX_BUFFER_SIZE];
 // #define SIMPLE	1
 
 EJCanvasContext::EJCanvasContext (short widthp, short heightp) {
-	memset(stateStack, 0, sizeof(stateStack));
+	std::memset(stateStack, 0, sizeof(stateStack));
 	stateIndex = 0;
 	state = &stateStack[stateIndex];
 	state->globalAlpha = 1;

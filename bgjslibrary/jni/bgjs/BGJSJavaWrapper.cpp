@@ -2,6 +2,7 @@
 #include "BGJSJavaWrapper.h"
 #include "mallocdebug.h"
 
+#include <math.h>
 #include <assert.h>
 
 using namespace v8;

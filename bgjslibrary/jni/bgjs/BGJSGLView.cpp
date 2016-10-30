@@ -12,6 +12,7 @@
 #include "GLcompat.h"
 
 #include <EGL/egl.h>
+#include <string.h>
 
 #include <v8.h>
 
@@ -43,7 +44,7 @@ BGJSGLView::BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixel
 
 	const char* eglVersion = eglQueryString(eglGetCurrentDisplay(), EGL_VERSION);
 	LOGD("egl version %s", eglVersion);
-	bzero (_frameRequests, sizeof(_frameRequests));
+	// bzero (_frameRequests, sizeof(_frameRequests));
 
 	context2d = new BGJSCanvasContext(500, 500);
 	context2d->backingStoreRatio = pixelRatio;

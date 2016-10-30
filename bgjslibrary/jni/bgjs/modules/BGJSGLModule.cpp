@@ -946,7 +946,7 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 	Local<Function> gClassRefLocal = *reinterpret_cast<Local<Function>*>(&BGJSGLModule::g_classRefContext2dGL);
 	Local<Object> jsObj = gClassRefLocal->NewInstance();
 	context2d->_jsValue.Reset(isolate, jsObj);
-	context2d->_jsValue.SetWeak<BGJSContext2dGL>(context2d, js_context_destruct);
+	context2d->_jsValue.SetWeak<BGJSContext2dGL>(context2d, js_context_destruct, WeakCallbackType::kInternalFields);
 	context2d->context = canvas->_view->context2d;
 	jsObj->SetInternalField(0, External::New(isolate, context2d));
 	canvas->_context2d = context2d;
@@ -954,12 +954,13 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 	args.GetReturnValue().Set(scope.Escape(jsObj));
 }
 
-void BGJSGLModule::js_context_destruct(const v8::WeakCallbackData<v8::Object, BGJSContext2dGL>& data) {
-
-	BGJSContext2dGL *context2d = data.GetParameter();
+void BGJSGLModule::js_context_destruct(const v8::WeakCallbackInfo<BGJSContext2dGL>& data) {
+	// delete (BGJSContext2dGL*)data.GetInternalField(0);
+	delete (data.GetParameter());
+	/* BGJSContext2dGL *context2d = data.GetParameter();
 	context2d->_jsValue.Reset();
 	// assert(value.IsNearDeath());
-	delete context2d;
+	delete context2d; */
 	// TODO: Also destroy canvas instance?
 }
 

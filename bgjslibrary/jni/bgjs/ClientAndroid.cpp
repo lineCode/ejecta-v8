@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <v8.h>
+#include <libplatform/libplatform.h>
 
 #include "BGJSContext.h"
 #include "ClientAbstract.h"
@@ -43,7 +44,7 @@ extern unsigned int __page_size = getpagesize();
 #undef LOG_TAG
 #endif
 #define  LOG_TAG    "ClientAndroid"
-#define	DEBUG	false
+#define	DEBUG	true
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
@@ -181,6 +182,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     jclass clazz = env->FindClass("ag/boersego/android/conn/BGJSPushHelper");
 	if (clazz == NULL) {
 		LOGE("Cannot find class BGJSPushHelper!");
+		env->ExceptionClear();
 	} else {
 		_client->bgjsPushHelper = (jclass)env->NewGlobalRef(clazz);
 		jmethodID pushMethod = env->GetStaticMethodID(clazz,
@@ -204,6 +206,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 	if (clazz == NULL) {
 		LOGE("Cannot find class ChartingV8Engine!");
+		env->ExceptionClear();
 	} else {
 		_client->chartingV8Engine = (jclass)env->NewGlobalRef(clazz);
 		_client->v8EnginegetIAPState = env->GetStaticMethodID(clazz, "getIAPState", "(Ljava/lang/String;)Z");
@@ -247,8 +250,32 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 
 	_client->v8Engine = v8Engine;
 
+	/* #ifdef __LP64__
+      const char kNativesFileName[] = "natives_blob_64.bin";
+      const char kSnapshotFileName[] = "snapshot_blob_64.bin";
+    #else
+      const char kNativesFileName[] = "natives_blob_32.bin";
+      const char kSnapshotFileName[] = "snapshot_blob_32.bin";
+    #endif // __LP64__ */
+
+	// v8::V8::InitializeExternalStartupData(argv[0]);
+	LOGI("Creating default platform");
+    v8::Platform* platform = v8::platform::CreateDefaultPlatform();
+    LOGD("Created default platform %p", platform);
+    v8::V8::InitializePlatform(platform);
+    LOGD("Initialized platform");
+    v8::V8::Initialize();
+    LOGD("Initialized v8");
+    v8::Isolate::CreateParams create_params;
+    create_params.array_buffer_allocator =
+          v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+    LOGI("Initialized createParams");
+    v8::Isolate* isolate = v8::Isolate::New(create_params);
+    LOGD("Initialized Isolate %p", isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    LOGD("Initialized isolateScope");
+
 	BGJSContext* ct = new BGJSContext();
-	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 
 	const char* localeStr = env->GetStringUTFChars(locale, NULL);
 	const char* langStr = env->GetStringUTFChars(lang, NULL);

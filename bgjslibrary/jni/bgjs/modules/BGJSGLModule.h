@@ -18,7 +18,7 @@ public:
 	static void create(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void js_canvas_constructor(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static void js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value>& args);
-	static void js_context_destruct (const v8::WeakCallbackData<v8::Object, BGJSContext2dGL>& info);
+	static void js_context_destruct (const v8::WeakCallbackInfo<BGJSContext2dGL>& info);
 	// static v8::Handle<v8::Value> js_context_beginPath(const v8::Arguments& args);
 	// static Handle<Value> BGJSCanvasGL:js_context_beginPath(const Arguments& args)
 

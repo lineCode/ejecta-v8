@@ -931,6 +931,7 @@ void BGJSContext::clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& arg
 
 Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const char* path) {
     Isolate *isolate = Isolate::GetCurrent();
+    LOGI("Load: got Isolate %p", isolate);
 	v8::Locker l(isolate);
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
@@ -967,15 +968,15 @@ BGJSContext::BGJSContext() {
 
     // Create default isolate just to be sure.
     Isolate* isolate = Isolate::GetCurrent();
-    if (!isolate) {
+    /* if (!isolate) {
         Isolate::CreateParams create_params;
         isolate = Isolate::New(create_params);
         isolate->Enter();
-    }
+    } */
 
-	v8::Locker l(Isolate::GetCurrent());
+	v8::Locker l(isolate);
 	// Create a stack-allocated handle scope.
-	HandleScope scope(Isolate::GetCurrent());
+	HandleScope scope(isolate);
 
 	// Create a template for the global object where we set the
 	// built-in global functions.
