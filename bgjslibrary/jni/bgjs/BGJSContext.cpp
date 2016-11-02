@@ -280,16 +280,25 @@ std::string BGJSContext::normalize_path(std::string& path) {
 	}
 	for (; i < length - 1; i++) {
 		std::string pathPart = pathParts.at(i + 1);
+        #ifdef DEBUG
+            LOGD("normalize_path step %i %s", i+1, pathPart.c_str());
+        #endif
 		// LOGD("normalize_path. Part %i = %s, %i", i + 1, pathPart.c_str(), pathPart.compare("."));
 		if (pathPart.compare("..") != 0) {
 			std::string nextSegment = pathParts.at(i);
 			if (nextSegment.compare(".") == 0) {
+                #ifdef DEBUG
+                    LOGD("normalize_path skipping %i because is ..", i);
+                #endif
 				continue;
 			}
 			if (outPath.length() > 0) {
 				outPath.append("/");
 			}
 			outPath.append(pathParts.at(i));
+            #ifdef DEBUG
+                LOGD("normalize_path outPath now %s", outPath.c_str());
+            #endif
 		} else {
 			i++;
 		}
@@ -298,8 +307,16 @@ std::string BGJSContext::normalize_path(std::string& path) {
 	return outPath;
 }
 
-void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void find_and_replace(std::string& source, std::string const& find, std::string const& replace)
+{
+    for(std::string::size_type i = 0; (i = source.find(find, i)) != std::string::npos;)
+    {
+        source.replace(i, find.length(), replace);
+        i += replace.length();
+    }
+}
 
+void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (args.Length() < 1) {
 	    args.GetReturnValue().SetUndefined();
 		return;
@@ -344,6 +361,7 @@ void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 	std::string pathName;
 	std::string pathTemp = std::string(*dirNameC).append("/").append(baseNameStr);
+	find_and_replace(pathTemp, std::string("/./"), std::string("/"));
 #ifdef DEBUG
 	LOGD("Pathtemp %s", pathTemp.c_str());
 #endif
@@ -814,6 +832,10 @@ void BGJSContext::js_global_requestAnimationFrame(
 			LOGI("requestAnimationFrame: Not a function");
 		}
 	} else {
+	    LOGI("requestAnimationFrame: Wrong number or type of parameters (num %d, is function %d %d, is object %d %d, is null %d %d)",
+	        args.Length(), args[0]->IsFunction(), args.Length() >= 2 ? args[1]->IsFunction() : false,
+	        args[0]->IsObject(), args.Length() >= 2 ? args[1]->IsObject() : false,
+	        args[0]->IsNull(), args.Length() >= 2 ? args[1]->IsNull() : false);
 		isolate->ThrowException(
 				v8::Exception::ReferenceError(
 					v8::String::NewFromUtf8(Isolate::GetCurrent(), "requestAnimationFrame: Wrong number or type of parameters")));
