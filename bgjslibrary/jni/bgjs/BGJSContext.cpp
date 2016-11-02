@@ -799,9 +799,10 @@ Handle<Value> BGJSContext::js_global_requestAnimationFrame(
 			LOGI("requestAnimationFrame: Not a function");
 		}
 	} else {
-	    LOGI("requestAnimationFrame: Wrong number or type of parameters (num %d, is function %d %d, is object %d %d",
+	    LOGI("requestAnimationFrame: Wrong number or type of parameters (num %d, is function %d %d, is object %d %d, is null %d %d)",
 	        args.Length(), args[0]->IsFunction(), args.Length() >= 2 ? args[1]->IsFunction() : false,
-	        args[0]->IsObject(), args.Length() >= 2 ? args[1]->IsObject() : false);
+	        args[0]->IsObject(), args.Length() >= 2 ? args[1]->IsObject() : false,
+	        args[0]->IsNull(), args.Length() >= 2 ? args[1]->IsNull() : false);
 		return v8::ThrowException(
 				v8::Exception::ReferenceError(
 					v8::String::New("requestAnimationFrame: Wrong number or type of parameters")));
