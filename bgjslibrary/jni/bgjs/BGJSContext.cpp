@@ -637,7 +637,15 @@ void BGJSContext::setClient(ClientAbstract* client) {
 }
 
 ClientAbstract* BGJSContext::getClient() {
-	return this->_client;
+    return this->_client;
+}
+
+void BGJSContext::setIsolate(Isolate* isolate) {
+    this->_isolate = isolate;
+}
+
+v8::Isolate* BGJSContext::getIsolate() {
+    return this->_isolate;
 }
 
 void BGJSContext::cancelAnimationFrame(int id) {
@@ -930,7 +938,7 @@ void BGJSContext::clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& arg
 }
 
 Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const char* path) {
-    Isolate *isolate = Isolate::GetCurrent();
+    Isolate *isolate = this->_isolate;
     LOGI("Load: got Isolate %p", isolate);
 	v8::Locker l(isolate);
     HandleScope scope(isolate);
@@ -1025,19 +1033,22 @@ BGJSContext::BGJSContext() {
 }
 
 void BGJSContext::createContext() {
-    Isolate* isolate = Isolate::GetCurrent();
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
 	int port_number = 1337;
 	bool wait_for_connection = true;
 	bool support_callback = true;
 #endif  // ENABLE_DEBUGGER_SUPPORT
-	v8::Locker l(isolate);
+    Isolate::Scope isolate_scope(_isolate);
+	v8::Locker l(_isolate);
     // Create a stack-allocated handle scope.
-    HandleScope scope(isolate);
+    HandleScope scope(_isolate);
 	// Create a new context.
-	BGJSInfo::_context.Set(isolate, v8::Context::New(isolate, NULL,
-                                      	        Local<ObjectTemplate>::New(isolate, BGJSInfo::_global.Get(isolate))));
+    Local<Context> context = v8::Context::New(_isolate, NULL,
+                                        Local<ObjectTemplate>::New(_isolate, BGJSInfo::_global.Get(_isolate)));
+    LOGI("createContext context is %p", context);
+    context->Enter();
+	BGJSInfo::_context.Set(_isolate, context);
 	BGJSInfo::_jscontext = this;
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
@@ -1128,8 +1139,8 @@ void BGJSContext::ReportException(v8::TryCatch* try_catch) {
 }
 
 void BGJSContext::log(int debugLevel, const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Locker locker(Isolate::GetCurrent());
-	HandleScope scope(Isolate::GetCurrent());
+	v8::Locker locker(args.GetIsolate());
+	HandleScope scope(args.GetIsolate());
 
 	std::stringstream str;
 	int l = args.Length();
@@ -1142,22 +1153,30 @@ void BGJSContext::log(int debugLevel, const v8::FunctionCallbackInfo<v8::Value>&
 }
 
 int BGJSContext::run() {
-	v8::Locker locker(Isolate::GetCurrent());
+    Isolate::Scope isolate_scope(_isolate);
+	v8::Locker locker(this->_isolate);
 	if (_script.IsEmpty()) {
 		LOGE("run called when no valid script loaded");
 	}
 	// Create a stack-allocated handle scope.
-	HandleScope scope(Isolate::GetCurrent());
+	HandleScope scope(this->_isolate);
 	v8::TryCatch try_catch;
-	Context::Scope context_scope(Isolate::GetCurrent()->GetEnteredContext());
+    Local<Context> context = BGJSContext::_context.Get(_isolate);
+    // context->Enter();
+    LOGI("run context is %p", context);
+	Context::Scope context_scope(context);
 
 	// Run the android.js file
 	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > res = load("js/android.js");
+    LOGI("run: Script loaded");
 	if (res.IsEmpty()) {
 		LOGE("Cannot find android.js");
+        this->_isolate->Exit();
 		return 0;
 	}
-	Handle<Value> result = Local<Script>::New(Isolate::GetCurrent(), res)->Run();
+    LOGD("run: Script creating");
+	Handle<Value> result = Local<Script>::New(this->_isolate, res)->Run();
+    LOGD("run: Script created");
 	res.Reset();
 
 	if (result.IsEmpty()) {
@@ -1165,17 +1184,20 @@ int BGJSContext::run() {
 		ReportException(&try_catch);
 		return false;
 	}
-
+    LOGD("run: Script starting");
 	// Run the script to get the result.
-	result = Local<Script>::New(Isolate::GetCurrent(), _script)->Run();
+	result = Local<Script>::New(this->_isolate, _script)->Run();
+    LOGD("run: Script started");
 
 	if (result.IsEmpty()) {
 		// Print errors that happened during execution.
 		ReportException(&try_catch);
+        this->_isolate->Exit();
 		return false;
 	}
 
 	_nextTimerId = 1;
+    this->_isolate->Exit();
 
 	// BGJSInfo::_context->Exit();
 
@@ -1197,5 +1219,6 @@ BGJSContext::~BGJSContext() {
 	if (_locale) {
 		free(_locale);
 	}
+    this->_isolate->Exit();
 }
 

@@ -63,7 +63,9 @@ public:
 	static void log(int level, const v8::FunctionCallbackInfo<v8::Value>& args);
 	int run();
 	void setClient(ClientAbstract* client);
+    void setIsolate(v8::Isolate* isolate);
 	ClientAbstract* getClient();
+    v8::Isolate* getIsolate();
 	void setLocale(const char* locale, const char* lang, const char* tz);
 	void require(const v8::FunctionCallbackInfo<v8::Value>& args);
 	void normalizePath(const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -115,6 +117,7 @@ private:
 	// Attributes
 	v8::Persistent<v8::Function> cloneObjectMethod;	// clone
 	std::map<std::string, requireHook> _modules;
+    v8::Isolate* _isolate;
 
 #ifdef INTERNAL_REQUIRE_CACHE
 	std::map<std::string, v8::Value*> _requireCache;
@@ -122,7 +125,6 @@ private:
 	std::set<BGJSGLView*> _glViews;
 
 	int _nextTimerId;
-
 };
 
 
