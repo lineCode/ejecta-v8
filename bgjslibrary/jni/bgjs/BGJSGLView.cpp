@@ -123,6 +123,7 @@ void BGJSGLView::resize(Isolate* isolate, int widthp, int heightp, bool resizeOn
 	LOGI("Sending resize event to %i subscribers", count);
 #endif
 	if (count > 0) {
+		Isolate::Scope isolateScope(isolate);
 		TryCatch trycatch;
 		HandleScope scope (isolate);
 		Handle<Value> args[0];

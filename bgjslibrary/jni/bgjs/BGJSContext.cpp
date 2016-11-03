@@ -699,11 +699,11 @@ void BGJSContext::unregisterGLView(BGJSGLView* view) {
 }
 
 bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
-    Isolate* isolate = Isolate::GetCurrent();
-	v8::Locker l(isolate);
-	HandleScope scope(isolate);
+    Isolate::Scope isolateScope(_isolate);
+	v8::Locker l(_isolate);
+	HandleScope scope(_isolate);
 
-	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context.Get(isolate)));
+	Context::Scope context_scope(Local<Context>::New(_isolate, BGJSContext::_context.Get(_isolate)));
 
 	TryCatch trycatch;
 	bool didDraw = false;
@@ -721,15 +721,15 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 			didDraw = true;
 			request->view->prepareRedraw();
 			Handle<Value> args[0];
-			Handle<Value> result = Local<Object>::New(isolate, request->callback)->CallAsFunction(
-					Local<Object>::New(isolate, request->thisObj), 0, args);
+			Handle<Value> result = Local<Object>::New(_isolate, request->callback)->CallAsFunction(
+					Local<Object>::New(_isolate, request->thisObj), 0, args);
 
 			if (result.IsEmpty()) {
 				LOGE("Exception occured while running runAnimationRequest cb");
 				BGJSContext::ReportException(&trycatch);
 			}
 
-			String::Utf8Value fnName(Local<Object>::New(isolate, request->callback)->ToString());
+			String::Utf8Value fnName(Local<Object>::New(_isolate, request->callback)->ToString());
 #ifdef DEBUG
 			LOGD("runAnimation number %d %s", index, *fnName);
 #endif
@@ -750,7 +750,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 
 	// If we couldn't draw anything, request that we can the next time
 	if (!didDraw) {
-		view->call(isolate, view->_cbRedraw);
+		view->call(_isolate, view->_cbRedraw);
 	}
 	return didDraw;
 }
@@ -811,10 +811,10 @@ void BGJSContext::js_global_setTz(Local<String> property, Local<Value> value,
 
 void BGJSContext::js_global_requestAnimationFrame(
 		const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = Isolate::GetCurrent();
-	v8::Locker l(isolate);
-	HandleScope scope(isolate);
-	BGJSContext *ctx = BGJSInfo::_jscontext;
+    BGJSContext *ctx = BGJSInfo::_jscontext;
+	v8::Locker l(ctx->getIsolate());
+	HandleScope scope(ctx->getIsolate());
+
 
 	if (args.Length() >= 2 && args[0]->IsFunction() && args[1]->IsObject()) {
 	    Local<Object> localFunc = args[0]->ToObject();
@@ -824,7 +824,7 @@ void BGJSContext::js_global_requestAnimationFrame(
 			#ifdef DEBUG
 				LOGD("requestAnimationFrame: on BGJSGLView %p, %p", view, &thisObj);
 			#endif
-			int id = view->requestAnimationFrameForView(isolate, localFunc, args.This(),
+			int id = view->requestAnimationFrameForView(ctx->getIsolate(), localFunc, args.This(),
 					(ctx->_nextTimerId)++);
 			args.GetReturnValue().Set(id);
 			return;
@@ -836,9 +836,9 @@ void BGJSContext::js_global_requestAnimationFrame(
 	        args.Length(), args[0]->IsFunction(), args.Length() >= 2 ? args[1]->IsFunction() : false,
 	        args[0]->IsObject(), args.Length() >= 2 ? args[1]->IsObject() : false,
 	        args[0]->IsNull(), args.Length() >= 2 ? args[1]->IsNull() : false);
-		isolate->ThrowException(
+        ctx->getIsolate()->ThrowException(
 				v8::Exception::ReferenceError(
-					v8::String::NewFromUtf8(Isolate::GetCurrent(), "requestAnimationFrame: Wrong number or type of parameters")));
+					v8::String::NewFromUtf8(ctx->getIsolate(), "requestAnimationFrame: Wrong number or type of parameters")));
 		return;
 		// return v8::ThrowException(v8::Exception::ReferenceError(v8::String::New("Wrong number of parameters")));
 	}
@@ -847,10 +847,11 @@ void BGJSContext::js_global_requestAnimationFrame(
 
 void BGJSContext::js_global_cancelAnimationFrame(
 		const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Locker l(Isolate::GetCurrent());
-    HandleScope scope(Isolate::GetCurrent());
+    BGJSContext *ctx = BGJSInfo::_jscontext;
+	v8::Locker l(ctx->getIsolate());
+    HandleScope scope(ctx->getIsolate());
 	if (args.Length() >= 1 && args[0]->IsNumber()) {
-		BGJSContext *ctx = BGJSInfo::_jscontext;
+
 		int id = (int) (Local<Number>::Cast(args[0])->Value());
 		ctx->cancelAnimationFrame(id);
 	}
@@ -868,18 +869,18 @@ void BGJSContext::js_global_setInterval(const v8::FunctionCallbackInfo<v8::Value
 
 void BGJSContext::setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args,
 		bool recurring) {
-    Isolate* isolate;
-	v8::Locker l(isolate);
-	HandleScope scope(isolate);
-	BGJSContext *ctx = BGJSInfo::_jscontext;
+    BGJSContext *ctx = BGJSInfo::_jscontext;
+	v8::Locker l(ctx->getIsolate());
+	HandleScope scope(ctx->getIsolate());
+
 
 	if (args.Length() == 2 && args[0]->IsFunction() && args[1]->IsNumber()) {
 		Local<v8::Function> callback = Local<Function>::Cast(args[0]);
 
 		WrapPersistentFunc* ws = new WrapPersistentFunc();
-		ws->callbackFunc.Reset(isolate, callback);
+		ws->callbackFunc.Reset(ctx->getIsolate(), callback);
 		WrapPersistentObj* wo = new WrapPersistentObj();
-		wo->obj.Reset(isolate, args.This());
+		wo->obj.Reset(ctx->getIsolate(), args.This());
 
 		jlong timeout = (jlong)(Local<Number>::Cast(args[1])->Value());
 
@@ -903,9 +904,9 @@ void BGJSContext::setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args,
 #endif
         args.GetReturnValue().Set(subId);
 	} else {
-		Isolate::GetCurrent()->ThrowException(
+        ctx->getIsolate()->ThrowException(
 				v8::Exception::ReferenceError(
-						v8::String::NewFromUtf8(isolate, "Wrong number of parameters")));
+						v8::String::NewFromUtf8(ctx->getIsolate(), "Wrong number of parameters")));
 	}
 	return;
 }
@@ -919,10 +920,9 @@ void BGJSContext::js_global_clearTimeout(const v8::FunctionCallbackInfo<v8::Valu
 }
 
 void BGJSContext::clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    Isolate* isolate = Isolate::GetCurrent();
-	v8::Locker l(isolate);
-    HandleScope scope(isolate);
-	BGJSContext *ctx = BGJSInfo::_jscontext;
+    BGJSContext *ctx = BGJSInfo::_jscontext;
+	v8::Locker l(ctx->getIsolate());
+    HandleScope scope(ctx->getIsolate());
 
 	args.GetReturnValue().SetUndefined();
 
@@ -952,9 +952,9 @@ void BGJSContext::clearTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& arg
 		assert(clazz);
 		env->CallStaticVoidMethod(clazz, pushMethod, (jint) id);
 	} else {
-	    Isolate::GetCurrent()->ThrowException(
+        ctx->getIsolate()->ThrowException(
     				v8::Exception::ReferenceError(
-    						v8::String::NewFromUtf8(isolate, "Wrong arguments for clearTimeout")));
+    						v8::String::NewFromUtf8(ctx->getIsolate(), "Wrong arguments for clearTimeout")));
 		LOGE("Wrong arguments for clearTimeout");
 	}
 }

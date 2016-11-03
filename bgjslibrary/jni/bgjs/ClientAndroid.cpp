@@ -300,30 +300,28 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_load(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jstring path) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	ct->getIsolate()->Enter();
+	Isolate::Scope(ct->getIsolate());
 	const char* pathStr = env->GetStringUTFChars(path, 0);
 	Persistent<Script, CopyablePersistentTraits<Script> > res = ct->load(pathStr);
 	if (!res.IsEmpty()) {
 		ct->_script.Reset(ct->getIsolate(), res);
 	}
 	env->ReleaseStringUTFChars(path, pathStr);
-    ct->getIsolate()->Exit();
 }
 
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_run(JNIEnv * env,
 		jobject obj, jlong ctxPtr) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	ct->getIsolate()->Enter();
+	Isolate::Scope(ct->getIsolate());
 	_client->envCache = env;
 	ct->run();
-    ct->getIsolate()->Exit();
 }
 
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jlong jsCbPtr, jlong thisPtr, jboolean cleanup, jboolean runCb) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
     v8::Isolate* isolate = context->getIsolate();
-    isolate->Enter();
+	Isolate::Scope isolateScope(isolate);
 
 	v8::Locker l (isolate);
 	Context::Scope context_scope((*reinterpret_cast<Local<Context>*>(&context->_context)));
@@ -360,13 +358,12 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		ws->callbackFunc.Reset();
 		delete(ws);
 	}
-    isolate->Exit();
 }
 
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_runCBBoolean (JNIEnv * env, jobject obj, jlong ctxPtr, jlong cbPtr, jlong thisPtr, jboolean b) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
-
     v8::Isolate* isolate = context->getIsolate();
+	Isolate::Scope isolateScope(isolate);
 
 	v8::Locker l (isolate);
 	Context::Scope context_scope((*reinterpret_cast<Local<Context>*>(&context->_context)));

@@ -1124,13 +1124,16 @@ static void checkGlError(const char* op) {
 
 JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_createGL(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jobject javaGlView, jfloat pixelRatio, jboolean noClearOnFlip) {
-
-    Isolate* isolate = Isolate::GetCurrent();
+    LOGD("createGL started");
+	BGJSContext* ct = (BGJSContext*) ctxPtr;
+	Isolate* isolate = ct->getIsolate();
+    LOGD("createGL: isolate is %p", isolate);
+	Isolate::Scope isolate_scope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
+    Local<Context> v8Context = BGJSContext::_context.Get(isolate);
+    LOGD("createGL: run context is %p, isolate is %p", v8Context, isolate);
 
-	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
     Context::Scope context_scope(v8Context);
 
 	BGJSGLView *view = new BGJSGLView(isolate, BGJSGLModule::_bgjscontext, pixelRatio, noClearOnFlip);
@@ -1144,15 +1147,16 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_createGL(JNIEnv * en
 
 JNIEXPORT int JNICALL Java_ag_boersego_bgjs_ClientAndroid_init(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jlong objPtr, jint width, jint height, jstring callbackName) {
-    Isolate* isolate = Isolate::GetCurrent();
+	BGJSContext* ct = (BGJSContext*) ctxPtr;
+	Isolate* isolate = ct->getIsolate();
+	Isolate::Scope isolateScope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
 #ifdef DEBUG
 	LOGI("setupGraphics(%d, %d)", width, height);
 #endif
-	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
+    Local<Context> v8Context = BGJSContext::_context.Get(isolate);
 	Context::Scope context_scope(v8Context);
 
 	BGJSGLView *view = (BGJSGLView*) objPtr;
@@ -1183,11 +1187,12 @@ JNIEXPORT int JNICALL Java_ag_boersego_bgjs_ClientAndroid_init(JNIEnv * env,
 
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_close(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jlong objPtr) {
-    Isolate* isolate = Isolate::GetCurrent();
+	BGJSContext* ct = (BGJSContext*) ctxPtr;
+	Isolate* isolate = ct->getIsolate();
+	Isolate::Scope isolateScaope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
-	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
 	Context::Scope context_scope(v8Context);
 
@@ -1219,7 +1224,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_redraw(JNIEnv * env,
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jlong objPtr, jstring typeStr,
 		jfloatArray xArr, jfloatArray yArr, jfloat scale) {
-    Isolate* isolate = Isolate::GetCurrent();
+	BGJSContext* ct = (BGJSContext*) ctxPtr;
+	Isolate* isolate = ct->getIsolate();
+	Isolate::Scope isolateScaope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
@@ -1237,7 +1244,6 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 		return;
 	} */
 
-	BGJSContext* ct = (BGJSContext*) ctxPtr;
     Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
 	Context::Scope context_scope(v8Context);
 	BGJSGLView *view = (BGJSGLView*) objPtr;

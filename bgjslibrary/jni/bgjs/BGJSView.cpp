@@ -85,7 +85,7 @@ void setHeight(Local<String> property, Local<Value> value,
 }
 
 void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = Isolate::GetCurrent();
+	Isolate* isolate = args.GetIsolate();
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 	BGJSView *view = externalToClassPtr<BGJSView>(args.Data());
@@ -111,7 +111,7 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 BGJSView::BGJSView(Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) {
-HandleScope scope(isolate);
+	HandleScope scope(isolate);
 	opened = false;
 	_contentObj = 0;
 
@@ -130,8 +130,10 @@ HandleScope scope(isolate);
 	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "devicePixelRatio"), getPixelRatio, setPixelRatio);
 
 	// bgjsgl->SetAccessor(String::New("magnifierPoint"), getMagnifierPoint, setMagnifierPoint);
+    // NODE_SET_METHOD(bgjsgl, "on", makeStaticCallableFunc(BGJSView::js_view_on));
+    Handle<FunctionTemplate> ft = FunctionTemplate::New(isolate, BGJSView::js_view_on);
+    bgjsgl->Set(String::NewFromUtf8(isolate, "on"), ft->GetFunction());
 
-	NODE_SET_METHOD(bgjsgl, "on", makeStaticCallableFunc(BGJSView::js_view_on));
 
 	this->jsViewOT.Reset(isolate, bgjsgl);
 }
