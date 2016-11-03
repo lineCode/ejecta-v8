@@ -89,6 +89,7 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 	BGJSView *view = externalToClassPtr<BGJSView>(args.Data());
+	LOGD("BGJSView.on: BGJSView instance is %p", view);
 	if (args.Length() == 2 && args[0]->IsString() && args[1]->IsObject()) {
 		Handle<Object> func = args[1]->ToObject();
 		if (func->IsFunction()) {
@@ -96,6 +97,7 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			// v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > funcPersist(isolate, func);
 			v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* funcPersist = new v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >(isolate, func);
 			const char *event = *eventUtf8;
+			LOGD("BGJSView.on: persist is %p, event is %s", funcPersist, event);
 			if (strcmp(event, "event") == 0) {
 				view->_cbEvent.push_back(funcPersist);
 			} else if (strcmp(event, "close") == 0) {
@@ -119,20 +121,24 @@ BGJSView::BGJSView(Isolate* isolate, const BGJSContext *ctx, float pixelRatio, b
 
 	this->pixelRatio = pixelRatio;
 
-	// Create new JS BGJSView object
+	//  new JS BGJSView object
 	this->_jsContext = ctx;
-	v8::Local<v8::FunctionTemplate> bgjsglft = v8::FunctionTemplate::New(isolate);
-	bgjsglft->SetClassName(String::NewFromUtf8(isolate, "BGJSView"));
-	v8::Local<v8::ObjectTemplate> bgjsgl = bgjsglft->InstanceTemplate();
+	LOGD("BGJSView context is %p", ctx);
+	v8::Local<v8::ObjectTemplate> bgjsgl = v8::ObjectTemplate::New(isolate);
+	// bgjsglft->SetClassName(String::NewFromUtf8(isolate, "BGJSView"));
+	// v8::Local<v8::ObjectTemplate> bgjsgl = bgjsglft->InstanceTemplate();
 	bgjsgl->SetInternalFieldCount(1);
-	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "width"), getWidth, setWidth);
-	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "height"), getHeight, setHeight);
-	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "devicePixelRatio"), getPixelRatio, setPixelRatio);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "width", NewStringType::kNormal).ToLocalChecked(), getWidth, setWidth);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "height", NewStringType::kNormal).ToLocalChecked(), getHeight, setHeight);
+	bgjsgl->SetAccessor(String::NewFromUtf8(isolate, "devicePixelRatio", NewStringType::kNormal).ToLocalChecked(), getPixelRatio, setPixelRatio);
 
 	// bgjsgl->SetAccessor(String::New("magnifierPoint"), getMagnifierPoint, setMagnifierPoint);
     // NODE_SET_METHOD(bgjsgl, "on", makeStaticCallableFunc(BGJSView::js_view_on));
-    Handle<FunctionTemplate> ft = FunctionTemplate::New(isolate, BGJSView::js_view_on);
-    bgjsgl->Set(String::NewFromUtf8(isolate, "on"), ft->GetFunction());
+    // EscapableHandleScope scope(Isolate::GetCurrent());
+    // return scope.Escape(External::New(Isolate::GetCurrent(), reinterpret_cast<void *>(this)))
+    Local<External> staticCallableThis = External::New(isolate, reinterpret_cast<void *>(this));
+    Handle<FunctionTemplate> ft = FunctionTemplate::New(isolate, BGJSView::js_view_on, staticCallableThis);
+    bgjsgl->Set(String::NewFromUtf8(isolate, "on"), ft);
 
 
 	this->jsViewOT.Reset(isolate, bgjsgl);
@@ -151,7 +157,8 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 		config = v8::Undefined(isolate);
 	}
 
-	// bgjsgl->Set(String::New("log"), FunctionTemplate::New(BGJSGLModule::log));
+	LOGD("startJS. jsContext %p, jsC->c %p", this->_jsContext, BGJSInfo::_context.Get(isolate));
+
 	Local<Object> objInstance = (*reinterpret_cast<Local<ObjectTemplate>*>(&this->jsViewOT))->NewInstance();
 	objInstance->SetInternalField(0, External::New(isolate, this));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
@@ -161,7 +168,7 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 	    Number::New(isolate, hasIntradayQuotes) };
 
 	Local<Value> res = this->_jsContext->callFunction(isolate,
-	        (*reinterpret_cast<Local<Context>*>(&_jsContext->_context))->Global(), fnName, 5,
+	        BGJSInfo::_context.Get(isolate)->Global(), fnName, 5,
 			argv);
 	if (res->IsNumber()) {
 		_contentObj = res->ToNumber()->Value();

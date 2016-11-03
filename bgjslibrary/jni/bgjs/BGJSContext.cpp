@@ -1068,10 +1068,11 @@ void BGJSContext::createContext() {
 	// Create a new context.
     Local<Context> context = v8::Context::New(_isolate, NULL,
                                         Local<ObjectTemplate>::New(_isolate, BGJSInfo::_global.Get(_isolate)));
-    LOGI("createContext context is %p", context);
-    context->Enter();
+    LOGI("createContext v8context is %p, BGJSContext is %p", context, this);
+    // context->Enter();
 	BGJSInfo::_context.Set(_isolate, context);
 	BGJSInfo::_jscontext = this;
+	this->_context.Set(_isolate, context);
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
 	debug_message_context = v8::Persistent<v8::Context>::Persistent(isolate, BGJSInfo::_context);

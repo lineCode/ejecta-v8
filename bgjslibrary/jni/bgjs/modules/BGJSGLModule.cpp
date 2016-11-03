@@ -15,8 +15,8 @@
 
 #include "../jniext.h"
 
-// #define DEBUG 1
-#undef DEBUG
+#define DEBUG 1
+// #undef DEBUG
 
 #define LOG_TAG "BGJSGLModule"
 
@@ -1103,7 +1103,6 @@ v8::Local<v8::Value> BGJSGLModule::initWithContext(Isolate* isolate, const BGJSC
 
 	doRegister(isolate, context);
 
-	this->_canvasContext = new BGJSCanvasContext(500, 500);
 	return v8::Undefined(isolate);
 }
 

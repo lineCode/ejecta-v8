@@ -40,6 +40,7 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
 
     private static final String TAG = "DemoDetailFragment";
     private String mScriptCb = "startPlasma";
+    private float mScale;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -66,6 +67,7 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
             // to load content from a content provider.
             mScriptCb = getArguments().getString(ARG_ITEM_ID);
         }
+        mScale = getResources().getDisplayMetrics().density;
     }
 
     private void initializeV8 (final long jsId) {
@@ -75,7 +77,7 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
         final View jsView = (View)mView;
         final int width = (int)(jsView.getWidth() / density);
         final int height = (int)(jsView.getHeight() / density);
-        ClientAndroid.init(mV8Engine.getNativePtr(), jsId, width, height, mScriptCb);
+        ClientAndroid.init(mV8Engine.getNativePtr(), jsId, (int)(width * mScale), (int)(height * mScale), mScriptCb);
     }
 
     protected void createGLView() {
