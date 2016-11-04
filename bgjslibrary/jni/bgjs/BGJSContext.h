@@ -49,7 +49,7 @@ typedef  void (*requireHook) (v8::Isolate* isolate, v8::Handle<v8::Object> targe
 class BGJSContext : public BGJSInfo {
 public:
     // static BGJSContext& getInstance();
-    BGJSContext();
+    BGJSContext(v8::Isolate* isolate);
 	virtual ~BGJSContext();
 
 	v8::Handle<v8::Value> callFunction(v8::Isolate* isolate, v8::Handle<v8::Object> recv, const char* name,
@@ -63,9 +63,8 @@ public:
 	static void log(int level, const v8::FunctionCallbackInfo<v8::Value>& args);
 	int run();
 	void setClient(ClientAbstract* client);
-    void setIsolate(v8::Isolate* isolate);
-	ClientAbstract* getClient();
-    v8::Isolate* getIsolate();
+	ClientAbstract* getClient() const;
+    v8::Isolate* getIsolate() const;
 	void setLocale(const char* locale, const char* lang, const char* tz);
 	void require(const v8::FunctionCallbackInfo<v8::Value>& args);
 	void normalizePath(const v8::FunctionCallbackInfo<v8::Value>& info);

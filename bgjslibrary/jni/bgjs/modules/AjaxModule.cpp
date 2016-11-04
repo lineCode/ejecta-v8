@@ -42,7 +42,7 @@ AjaxModule::~AjaxModule() {
 }
 
 void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    Isolate* isolate = Isolate::GetCurrent();
+    Isolate* isolate = args.GetIsolate();
 	v8::Locker l(isolate);
 	if (args.Length() < 1) {
 		LOGE("Not enough parameters for ajax");
@@ -138,12 +138,17 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 		jlong jsCbPtr, jlong thisPtr, jlong errorCb, jboolean success, jboolean processData) {
 
 	BGJSContext* context = (BGJSContext*)ctxPtr;
-	Isolate* isolate = Isolate::GetCurrent();
-	v8::Locker l(isolate);
-	Context::Scope context_scope((*reinterpret_cast<Local<Context>*>(&context->_context)));
+
+	Isolate* isolate = context->getIsolate();
+	Isolate::Scope isolateScope(isolate);
+    v8::Locker l(isolate);
+    HandleScope scope(isolate);
+
+	Local<Context> v8Context = context->_context.Get(isolate);
+	Context::Scope context_scope(v8Context);
+
 	const char *nativeString = NULL;
 
-	HandleScope scope(isolate);
 	TryCatch trycatch;
 
 	Persistent<Object>* thisObj = static_cast<Persistent<Object>*>((void*)thisPtr);
@@ -153,6 +158,8 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 		errorP = static_cast<Persistent<Function>*>((void*)errorCb);
 	}
 	Persistent<Function>* callbackP = static_cast<Persistent<Function>*>((void*)jsCbPtr);
+
+	// LOGD("ajaxDone thisObj %p local %p errorP %p callbackP %p processData %i data %p", thisObj, thisObjLocal, errorP, callbackP, processData, dataStr);
 
 	Handle<Value> argarray[1];
 	int argcount = 1;
@@ -174,6 +181,8 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 
 
 	Handle<Value> result;
+
+	LOGD("ajaxDone callback");
 
 	if (success) {
 		result = (*reinterpret_cast<Local<Function>*>(callbackP))->Call(thisObjLocal, argcount, argarray);

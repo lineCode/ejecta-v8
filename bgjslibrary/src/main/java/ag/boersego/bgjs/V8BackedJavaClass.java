@@ -17,6 +17,7 @@ public class V8BackedJavaClass {
         super.finalize();
 		if (mNativePtr != 0) {
 			ClientAndroid.cleanupNativeFnPtr(mNativePtr);
+			mNativePtr = 0;
 		}
 	}
 }

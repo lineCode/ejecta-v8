@@ -942,7 +942,7 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 	}
 
 	BGJSContext2dGL *context2d = new BGJSContext2dGL();
-	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&BGJSContext::_context);
+	Local<Context> v8Context = BGJSContext::_context.Get(isolate);
 	Local<Function> gClassRefLocal = *reinterpret_cast<Local<Function>*>(&BGJSGLModule::g_classRefContext2dGL);
 	Local<Object> jsObj = gClassRefLocal->NewInstance();
 	context2d->_jsValue.Reset(isolate, jsObj);
@@ -1188,11 +1188,11 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_close(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jlong objPtr) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	Isolate* isolate = ct->getIsolate();
-	Isolate::Scope isolateScaope(isolate);
+	Isolate::Scope isolateScope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
-	Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
+	Local<Context> v8Context = ct->_context.Get(isolate);
 	Context::Scope context_scope(v8Context);
 
 	BGJSGLView *view = (BGJSGLView*) objPtr;
@@ -1225,7 +1225,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 		jfloatArray xArr, jfloatArray yArr, jfloat scale) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	Isolate* isolate = ct->getIsolate();
-	Isolate::Scope isolateScaope(isolate);
+	Isolate::Scope isolateScope(isolate);
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
@@ -1243,7 +1243,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 		return;
 	} */
 
-    Local<Context> v8Context = *reinterpret_cast<Local<Context>*>(&ct->_context);
+    Local<Context> v8Context = ct->_context.Get(isolate);
 	Context::Scope context_scope(v8Context);
 	BGJSGLView *view = (BGJSGLView*) objPtr;
 

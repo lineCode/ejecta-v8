@@ -17,9 +17,13 @@ BGJSJavaWrapper::BGJSJavaWrapper() {
 }
 
 BGJSJavaWrapper::~BGJSJavaWrapper () {
+	cleanUp(JNU_GetEnv());
+}
+
+void BGJSJavaWrapper::cleanUp(JNIEnv* env) {
 	if (_javaObject != NULL) {
-		JNIEnv* env = JNU_GetEnv();
 		env->DeleteGlobalRef(_javaObject);
+		_javaObject = NULL;
 	}
 	_jsObject.Reset();
 }

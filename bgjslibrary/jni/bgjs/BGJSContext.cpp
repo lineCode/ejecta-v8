@@ -175,6 +175,8 @@ void BGJSContext::CloneObject(Handle<Object> recv, Handle<Value> source,
 		this->cloneObjectMethod.Reset(Isolate::GetCurrent(), cloneObjectMethod_);
 	}
 
+	LOGD("BGJSContext cloneObject call");
+
 	Local<Function>::New(Isolate::GetCurrent(), this->cloneObjectMethod)->Call(recv, 2, args);
 }
 
@@ -236,6 +238,7 @@ Handle<Value> BGJSContext::callFunction(Isolate* isolate, Handle<Object> recv, c
 
 	Local<Function> fn = Handle<Function>::Cast(recv->Get(String::NewFromUtf8(isolate, name)));
 			String::Utf8Value value(fn);
+	LOGD("BGJSContext callFunction call");
 	Local<Value> result = fn->Call(recv, argc, argv);
 	if (result.IsEmpty()) {
 		LOGE("callFunction exception");
@@ -380,6 +383,8 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 
 	Isolate* isolate = Isolate::GetCurrent();
+
+	// LOGD("require. Current context %p", isolate->GetCurrentContext());
 
 	v8::Locker l(isolate);
 	EscapableHandleScope scope(isolate);
@@ -546,82 +551,88 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
     Local<Context> context = Context::New(isolate, NULL, Local<ObjectTemplate>::New(isolate, BGJSInfo::_global.Get(isolate)));
     Persistent<Context, CopyablePersistentTraits<Value> > contextPersistent(isolate, context);
+    context->SetEmbedderData(1, String::NewFromUtf8(isolate, basePath.c_str()));
 
 	Local<Array> keys;
 	// Enter the context
-	context->Enter();
+	{
+		Context::Scope embeddedContext(context);
+		// LOGD("require entering context %p", context);
 
-	context->SetEmbedderData(1, String::NewFromUtf8(isolate, basePath.c_str()));
+		sandbox->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
+	#ifdef DEBUG
+		LOGD("New __dirname %s", basePath.c_str());
+	#endif
 
-	sandbox->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
-#ifdef DEBUG
-	LOGD("New __dirname %s", basePath.c_str());
-#endif
+		// Copy everything from the passed in sandbox (either the persistent
+		// context for runInContext(), or the sandbox arg to runInNewContext()).
+		CloneObject(args.This(), sandbox, context->Global()->GetPrototype());
 
-	// Copy everything from the passed in sandbox (either the persistent
-	// context for runInContext(), or the sandbox arg to runInNewContext()).
-	CloneObject(args.This(), sandbox, context->Global()->GetPrototype());
+		context->Global()->GetPrototype()->ToObject()->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
 
-	context->Global()->GetPrototype()->ToObject()->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
+		if (buf) {
+			// Create a string containing the JavaScript source code.
+			source = String::NewFromUtf8(isolate, buf);
 
-	if (buf) {
-		// Create a string containing the JavaScript source code.
-		source = String::NewFromUtf8(isolate, buf);
+			// well, here WrappedScript::New would suffice in all cases, but maybe
+			// Compile has a little better performance where possible
+			Handle<Script> scriptR = Script::Compile(source, filename);
+			if (scriptR.IsEmpty()) {
 
-		// well, here WrappedScript::New would suffice in all cases, but maybe
-		// Compile has a little better performance where possible
-		Handle<Script> scriptR = Script::Compile(source, filename);
-		if (scriptR.IsEmpty()) {
+				context->DetachGlobal();
+				// context->Exit();
+				// LOGD("require leaving context1 %p", context);
+				// contextPersistent.Reset();
 
-			context->DetachGlobal();
-			context->Exit();
-			contextPersistent.Reset();
+				// FIXME UGLY HACK TO DISPLAY SYNTAX ERRORS.
+				BGJSContext::ReportException(&try_catch);
 
-			// FIXME UGLY HACK TO DISPLAY SYNTAX ERRORS.
-			BGJSContext::ReportException(&try_catch);
+				free((void*) buf);
+				buf = NULL;
 
-			free((void*) buf);
-			buf = NULL;
-
-			// Hack because I can't get a proper stacktrace on SyntaxError
-			args.GetReturnValue().Set(scope.Escape(try_catch.Exception()));
-			return;
-		}
-
-		result = scriptR->Run();
-		if (result.IsEmpty()) {
-			context->DetachGlobal();
-			context->Exit();
-			contextPersistent.Reset();
-			/* ReThrow doesn't re-throw TerminationExceptions; a null exception value
-			 * is re-thrown instead (see Isolate::PropagatePendingExceptionToExternalTryCatch())
-			 * so we re-propagate a TerminationException explicitly here if necesary. */
-			if (try_catch.CanContinue())
+				// Hack because I can't get a proper stacktrace on SyntaxError
+				args.GetReturnValue().Set(scope.Escape(try_catch.Exception()));
 				return;
-			v8::V8::TerminateExecution(isolate);
+			}
 
-			free((void*) buf);
-			buf = NULL;
+			result = scriptR->Run();
+			if (result.IsEmpty()) {
+				context->DetachGlobal();
+				// LOGD("require leaving context2 %p", context);
+				// context->Exit();
+				contextPersistent.Reset();
+				/* ReThrow doesn't re-throw TerminationExceptions; a null exception value
+				 * is re-thrown instead (see Isolate::PropagatePendingExceptionToExternalTryCatch())
+				 * so we re-propagate a TerminationException explicitly here if necesary. */
+				if (try_catch.CanContinue())
+					return;
+				v8::V8::TerminateExecution(isolate);
 
-            args.GetReturnValue().SetUndefined();
+				free((void*) buf);
+				buf = NULL;
+
+	            args.GetReturnValue().SetUndefined();
+				return;
+			}
+		} else {
+			LOGE("Cannot find file %s", *basename);
+			log(LOG_ERROR, args);
+			context->DetachGlobal();
+			// LOGD("require leaving context3 %p", context);
+			// context->Exit();
+			contextPersistent.Reset();
+			args.GetReturnValue().SetUndefined();
 			return;
 		}
-	} else {
-		LOGE("Cannot find file %s", *basename);
-		log(LOG_ERROR, args);
-		context->DetachGlobal();
-		context->Exit();
-		contextPersistent.Reset();
-		args.GetReturnValue().SetUndefined();
-		return;
-	}
 
-	// success! copy changes back onto the sandbox object.
-	CloneObject(args.This(), context->Global()->GetPrototype(), sandbox);
-	sandbox->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
-	// Clean up, clean up, everybody everywhere!
+		// success! copy changes back onto the sandbox object.
+		CloneObject(args.This(), context->Global()->GetPrototype(), sandbox);
+		sandbox->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
+		// Clean up, clean up, everybody everywhere!
+	}
 	context->DetachGlobal();
-	context->Exit();
+	// LOGD("require leaving context4 %p", context);
+	// context->Exit();
 	contextPersistent.Reset();
 	if (buf) {
 		free((void*) buf);
@@ -654,15 +665,11 @@ void BGJSContext::setClient(ClientAbstract* client) {
 	this->_client = client;
 }
 
-ClientAbstract* BGJSContext::getClient() {
+ClientAbstract* BGJSContext::getClient() const {
     return this->_client;
 }
 
-void BGJSContext::setIsolate(Isolate* isolate) {
-    this->_isolate = isolate;
-}
-
-v8::Isolate* BGJSContext::getIsolate() {
+v8::Isolate* BGJSContext::getIsolate() const {
     return this->_isolate;
 }
 
@@ -711,9 +718,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 	AnimationFrameRequest *request;
 	int index = view->_firstFrameRequest, nextIndex = view->_nextFrameRequest,
 			startFrame = view->_firstFrameRequest;
-#ifdef DEBUG
 	LOGD("runAnimation %d to %d", view->_firstFrameRequest, view->_nextFrameRequest);
-#endif
 	while (index != nextIndex) {
 		request = &(view->_frameRequests[index]);
 
@@ -721,6 +726,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 			didDraw = true;
 			request->view->prepareRedraw();
 			Handle<Value> args[0];
+			LOGD("BGJSC runAnimation call");
 			Handle<Value> result = Local<Object>::New(_isolate, request->callback)->CallAsFunction(
 					Local<Object>::New(_isolate, request->thisObj), 0, args);
 
@@ -822,7 +828,7 @@ void BGJSContext::js_global_requestAnimationFrame(
 		BGJSGLView* view = static_cast<BGJSGLView *>(v8::External::Cast(*(objRef->GetInternalField(0)))->Value());
 		if (localFunc->IsFunction()) {
 			#ifdef DEBUG
-				LOGD("requestAnimationFrame: on BGJSGLView %p, %p", view, &thisObj);
+				LOGD("requestAnimationFrame: on BGJSGLView %p", view);
 			#endif
 			int id = view->requestAnimationFrameForView(ctx->getIsolate(), localFunc, args.This(),
 					(ctx->_nextTimerId)++);
@@ -966,16 +972,21 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
 
-	Context::Scope context_scope(Local<Context>::New(isolate, BGJSContext::_context.Get(isolate)));
+	Context::Scope context_scope(BGJSContext::_context.Get(isolate));
+
+	LOGD("load. Current context %p", isolate->GetCurrentContext());
 
 	const char* buf = this->_client->loadFile(path);
+	LOGD("BGJSContext::load file loaded %p", buf);
 
 	// Create a string containing the JavaScript source code.
 	Handle<String> source = String::NewFromUtf8(isolate, buf);
 
 	// Compile the source code.
 	Handle<Script> scr = Script::Compile(source);
+	LOGD("BGJSContext::load file compiled");
 	Persistent<Script, CopyablePersistentTraits<Script> > pers(isolate, scr);
+	LOGD("BGJSContext::load file persisted");
 
 	if (scr.IsEmpty()) {
 		LOGE("Error compiling script %s\n", buf);
@@ -991,13 +1002,13 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
 	return pers;
 }
 
-BGJSContext::BGJSContext() {
+BGJSContext::BGJSContext(v8::Isolate* isolate) {
 	_client = NULL;
 	_nextTimerId = 1;
 	_locale = NULL;
 
     // Create default isolate just to be sure.
-    Isolate* isolate = Isolate::GetCurrent();
+    this->_isolate = isolate;
     /* if (!isolate) {
         Isolate::CreateParams create_params;
         isolate = Isolate::New(create_params);
@@ -1041,7 +1052,7 @@ BGJSContext::BGJSContext() {
 					BGJSContext::js_global_cancelAnimationFrame));
 	global->Set(String::NewFromUtf8(isolate, "setTimeout"),
 			v8::FunctionTemplate::New(isolate, BGJSContext::js_global_setTimeout));
-	global->Set(String::NewFromUtf8(isolate, "isolate, setInterval"),
+	global->Set(String::NewFromUtf8(isolate, "setInterval"),
 			v8::FunctionTemplate::New(isolate, BGJSContext::js_global_setInterval));
 	global->Set(String::NewFromUtf8(isolate, "clearTimeout"),
 			v8::FunctionTemplate::New(isolate, BGJSContext::js_global_clearTimeout));
@@ -1194,7 +1205,6 @@ int BGJSContext::run() {
     LOGI("run: Script loaded");
 	if (res.IsEmpty()) {
 		LOGE("Cannot find android.js");
-        this->_isolate->Exit();
 		return 0;
 	}
     LOGD("run: Script creating");
@@ -1215,12 +1225,10 @@ int BGJSContext::run() {
 	if (result.IsEmpty()) {
 		// Print errors that happened during execution.
 		ReportException(&try_catch);
-        this->_isolate->Exit();
 		return false;
 	}
 
 	_nextTimerId = 1;
-    this->_isolate->Exit();
 
 	// BGJSInfo::_context->Exit();
 

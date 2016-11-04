@@ -157,14 +157,13 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 		config = v8::Undefined(isolate);
 	}
 
-	LOGD("startJS. jsContext %p, jsC->c %p", this->_jsContext, BGJSInfo::_context.Get(isolate));
-
 	Local<Object> objInstance = (*reinterpret_cast<Local<ObjectTemplate>*>(&this->jsViewOT))->NewInstance();
-	objInstance->SetInternalField(0, External::New(isolate, this));
+	LOGD("startJS. jsContext %p, jsC->c %p, objInstance %p configJson %s", this->_jsContext, BGJSInfo::_context.Get(isolate), objInstance, configJson ? configJson : "null");
+	objInstance->SetInternalField(0, External::New(isolate, reinterpret_cast<void *>(this)));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
 	this->_jsObj.Reset(isolate, objInstance);
 
-	Handle<Value> argv[5] = { uiObj, Local<Object>::New(isolate, this->_jsObj), config, Number::New(isolate, configId),
+	Handle<Value> argv[5] = { uiObj, objInstance, config, Number::New(isolate, configId),
 	    Number::New(isolate, hasIntradayQuotes) };
 
 	Local<Value> res = this->_jsContext->callFunction(isolate,
@@ -203,6 +202,8 @@ void BGJSView::sendEvent(Isolate* isolate, Handle<Object> eventObjRef) {
 
 		Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = _cbEvent[i];
 
+		LOGD("BGJSView sendEvent call");
+
 
 		// if (!cb->isEmpty()) {
 		    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
@@ -225,6 +226,7 @@ void BGJSView::call(Isolate* isolate, std::vector<Persistent<Object, v8::Copyabl
 	for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
 	    Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = list[i];
 	    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
+	    LOGD("BGJSView call call");
 		Local<Value> result = callback->CallAsFunction(callback, 0, args);
 		if (result.IsEmpty()) {
 			BGJSContext::ReportException(&trycatch);

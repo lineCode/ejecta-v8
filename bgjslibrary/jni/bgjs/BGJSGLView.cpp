@@ -19,8 +19,8 @@
 #include "os-detection.h"
 
 // #undef DEBUG
-// #define DEBUG 1
-#undef DEBUG
+#define DEBUG 1
+//#undef DEBUG
 // #define DEBUG_GL 0
 #undef DEBUG_GL
 #define LOG_TAG "BGJSGLView"
@@ -130,6 +130,7 @@ void BGJSGLView::resize(Isolate* isolate, int widthp, int heightp, bool resizeOn
 		for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
         	Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = _cbResize[i];
         	Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
+        	LOGD("resize callback call");
 
 			Handle<Value> result = callback->CallAsFunction(callback, 0, args);
 

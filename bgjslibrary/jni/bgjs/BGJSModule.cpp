@@ -77,6 +77,7 @@ extern "C" {
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (JNIEnv * env, jobject obj, jlong nativePtr) {
 	if (nativePtr) {
 		BGJSJavaWrapper* wrapper = (BGJSJavaWrapper*)nativePtr;
+		wrapper->cleanUp(env);
 		delete (wrapper);
 	}
 }

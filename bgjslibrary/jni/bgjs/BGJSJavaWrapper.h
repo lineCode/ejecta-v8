@@ -26,6 +26,7 @@ public:
 			const char* returnType, const bool isStatic, const v8::FunctionCallbackInfo<v8::Value>& args, bool (*f)(const char*, const char*, int, char**));
 	int getArgCount (const char* argsSpec, const int argsStrLen);
 	~BGJSJavaWrapper();
+	void cleanUp(JNIEnv* env);
 	const BGJSContext* _context;
 	jobject _javaObject;
 };
