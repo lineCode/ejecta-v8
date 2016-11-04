@@ -147,7 +147,7 @@ void BGJSGLView::close() {
 	for (int i = 0; i < MAX_FRAME_REQUESTS; i++) {
 		if (_frameRequests[i].valid && _frameRequests[i].view != NULL) {
 			_frameRequests[i].valid = false;
-			_frameRequests[i].callback.Reset();
+			BGJS_CLEAR_PERSISTENT(_frameRequests[i].callback);
 			_frameRequests[i].view = NULL;
 		}
 	}
@@ -184,10 +184,10 @@ int BGJSGLView::requestAnimationFrameForView(Isolate* isolate, Handle<Object> cb
 	// schedule request
 
 	AnimationFrameRequest *request = &_frameRequests[_nextFrameRequest];
-	request->callback.Reset(isolate, cb);
+	BGJS_RESET_PERSISTENT(isolate, request->callback, cb);
 	request->view = this;
 	request->valid = true;
-	request->thisObj.Reset(isolate, thisObj);
+	BGJS_RESET_PERSISTENT(isolate, request->thisObj, thisObj);
 	request->requestId = id;
 	_nextFrameRequest = (_nextFrameRequest + 1) % MAX_FRAME_REQUESTS;
 

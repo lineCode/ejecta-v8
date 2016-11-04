@@ -48,6 +48,18 @@ extern unsigned int __page_size = getpagesize();
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
+/* Persistent<Object>* __debugPersistentAllocObject(v8::Isolate* isolate, v8::Local<Object>* data, const char* file, int line, const char* func) {
+	Persistent<Object>* pers = new Persistent<Object>(isolate, *data);
+	
+	return pers;
+}
+
+Persistent<Function>* __debugPersistentAllocFunction(v8::Isolate* isolate, v8::Local<Function>* data, const char* file, int line, const char* func) {
+	Persistent<Function>* pers = new Persistent<Function>(isolate, *data);
+	LOGD("BGJS_NEW_PERSISTENT_PTR %p file %s line %i func %s", pers, file, line, func);
+	return pers;
+} */
+
 ClientAbstract::~ClientAbstract() {
 }
 
@@ -304,10 +316,11 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_load(JNIEnv * env,
 	Context::Scope context_scope(ct->_context.Get(ct->getIsolate()));
 	const char* pathStr = env->GetStringUTFChars(path, 0);
 	HandleScope scope (ct->getIsolate());
-	LOGD("clientAndroid load %s, context %p", ct->getIsolate()->GetCurrentContext());
+	LOGD("clientAndroid load %s, context %p", pathStr, ct->getIsolate()->GetCurrentContext());
 	Persistent<Script, CopyablePersistentTraits<Script> > res = ct->load(pathStr);
+	BGJS_NEW_PERSISTENT(res);
 	if (!res.IsEmpty()) {
-		ct->_script.Reset(ct->getIsolate(), res);
+		BGJS_RESET_PERSISTENT(ct->getIsolate(), ct->_script, res);
 		LOGD("clientAndroid load %s successful, context %p", pathStr, ct->getIsolate()->GetCurrentContext());
 	} else {
 		LOGD("clientAndroid load %s unsuccessful", pathStr);
@@ -365,9 +378,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		if (DEBUG) {
 			LOGI("timeoutCb cleaning up");
 		}
-		wo->obj.Reset();
+		BGJS_CLEAR_PERSISTENT(wo->obj)
 		delete(wo);
-		ws->callbackFunc.Reset();
+		BGJS_CLEAR_PERSISTENT(ws->callbackFunc)
 		delete(ws);
 	}
 }

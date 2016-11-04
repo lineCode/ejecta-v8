@@ -65,12 +65,15 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 				options->Get(String::NewFromUtf8(isolate, "error")));
 
 	Persistent<Function>* callbackPers = new Persistent<Function>(isolate, callback);
+	BGJS_NEW_PERSISTENT_PTR(callbackPers);
 	Persistent<Function>* errorPers;
 	if (!errCallback.IsEmpty() && !errCallback->IsUndefined())  {
 		errorPers = new Persistent<Function>(isolate, errCallback);
+		BGJS_NEW_PERSISTENT_PTR(errorPers);
 	}
 	// Persist the this object
 	Persistent<Object>* thisObj = new Persistent<Object>(isolate, args.This());
+	BGJS_NEW_PERSISTENT_PTR(thisObj);
 
 	// Get url
 	Local<String> url = Local<String>::Cast(options->Get(String::NewFromUtf8(isolate, "url")));
@@ -200,9 +203,9 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	if (nativeString) {
 		env->ReleaseStringUTFChars(dataStr, nativeString);
 	}
-	callbackP->Reset();
-	thisObj->Reset();
-	errorP->Reset();
+	BGJS_CLEAR_PERSISTENT_PTR(callbackP);
+	BGJS_CLEAR_PERSISTENT_PTR(thisObj);
+	BGJS_CLEAR_PERSISTENT_PTR(errorP);
 
 	return true;
 }

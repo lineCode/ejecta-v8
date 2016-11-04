@@ -25,7 +25,7 @@ void BGJSJavaWrapper::cleanUp(JNIEnv* env) {
 		env->DeleteGlobalRef(_javaObject);
 		_javaObject = NULL;
 	}
-	_jsObject.Reset();
+	BGJS_CLEAR_PERSISTENT(_jsObject);
 }
 /*
 extern "C" {
@@ -414,6 +414,7 @@ bool BGJSJavaWrapper::jsValToJavaVal (char spec, jvalue &jv, Local<Value> &arg, 
 				}
 				Local<v8::Function> callback = Local<Function>::Cast(arg);
 				Persistent<Function>* thisFn = new Persistent<Function>(Isolate::GetCurrent(), callback);
+				BGJS_NEW_PERSISTENT_PTR(thisFn);
 				jlong thisPtr = (jlong)(thisFn);
 				jv.j = thisPtr;
 				break;
@@ -552,6 +553,7 @@ void BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaMethodName
                 return;
 			}
 			Persistent<Object>* thisObj = new Persistent<Object>(isolate, args.This());
+			BGJS_NEW_PERSISTENT_PTR(thisObj);
 			jlong thisPtr = (jlong)(thisObj);
 			jv.j = thisPtr;
 			javaArgs[javaIndex] = jv;

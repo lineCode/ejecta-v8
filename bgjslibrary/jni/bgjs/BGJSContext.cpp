@@ -551,6 +551,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
     Local<Context> context = Context::New(isolate, NULL, Local<ObjectTemplate>::New(isolate, BGJSInfo::_global.Get(isolate)));
     Persistent<Context, CopyablePersistentTraits<Value> > contextPersistent(isolate, context);
+    BGJS_NEW_PERSISTENT(contextPersistent);
     context->SetEmbedderData(1, String::NewFromUtf8(isolate, basePath.c_str()));
 
 	Local<Array> keys;
@@ -600,7 +601,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 				context->DetachGlobal();
 				// LOGD("require leaving context2 %p", context);
 				// context->Exit();
-				contextPersistent.Reset();
+				BGJS_CLEAR_PERSISTENT(contextPersistent);
 				/* ReThrow doesn't re-throw TerminationExceptions; a null exception value
 				 * is re-thrown instead (see Isolate::PropagatePendingExceptionToExternalTryCatch())
 				 * so we re-propagate a TerminationException explicitly here if necesary. */
@@ -620,7 +621,7 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			context->DetachGlobal();
 			// LOGD("require leaving context3 %p", context);
 			// context->Exit();
-			contextPersistent.Reset();
+			BGJS_CLEAR_PERSISTENT(contextPersistent);
 			args.GetReturnValue().SetUndefined();
 			return;
 		}
@@ -633,15 +634,16 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	context->DetachGlobal();
 	// LOGD("require leaving context4 %p", context);
 	// context->Exit();
-	contextPersistent.Reset();
+	BGJS_CLEAR_PERSISTENT(contextPersistent);
 	if (buf) {
 		free((void*) buf);
 		buf = NULL;
 	}
 
 #ifdef INTERNAL_REQUIRE_CACHE
-	Persistent<Value> cacheObj = Persistent<Value>::Persistent(isolate, result);
-	_requireCache[baseNameStr] = *cacheObj;
+	Persistent<Value>* cacheObj = new Persistent<Value>::Persistent(isolate, result);
+	BGJS_NEW_PERSISTENT_PTR(cacheObj);
+	_requireCache[baseNameStr] = *acheObj;
 #endif
     args.GetReturnValue().Set(scope.Escape(result));
 	return;
@@ -685,8 +687,8 @@ void BGJSContext::cancelAnimationFrame(int id) {
 			if (request->requestId == id && request->valid
 					&& request->view != NULL) {
 				request->valid = false;
-				request->callback.Reset();
-				request->thisObj.Reset();
+				BGJS_CLEAR_PERSISTENT(request->callback);
+				BGJS_CLEAR_PERSISTENT(request->thisObj);
 #ifdef DEBUG
 				LOGD("cancelAnimationFrame cancelled id %d", request->requestId);
 #endif
@@ -739,8 +741,8 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 #ifdef DEBUG
 			LOGD("runAnimation number %d %s", index, *fnName);
 #endif
-			request->callback.Reset();
-			request->thisObj.Reset();
+			BGJS_CLEAR_PERSISTENT(request->callback);
+			BGJS_CLEAR_PERSISTENT(request->thisObj);
 
 			request->view->endRedraw();
 			request->valid = false;
@@ -884,9 +886,9 @@ void BGJSContext::setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args,
 		Local<v8::Function> callback = Local<Function>::Cast(args[0]);
 
 		WrapPersistentFunc* ws = new WrapPersistentFunc();
-		ws->callbackFunc.Reset(ctx->getIsolate(), callback);
+		BGJS_RESET_PERSISTENT(ctx->getIsolate(), ws->callbackFunc, callback);
 		WrapPersistentObj* wo = new WrapPersistentObj();
-		wo->obj.Reset(ctx->getIsolate(), args.This());
+		BGJS_RESET_PERSISTENT(ctx->getIsolate(), wo->obj, args.This());
 
 		jlong timeout = (jlong)(Local<Number>::Cast(args[1])->Value());
 
@@ -1202,6 +1204,7 @@ int BGJSContext::run() {
 
 	// Run the android.js file
 	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > res = load("js/android.js");
+	BGJS_NEW_PERSISTENT(res);
     LOGI("run: Script loaded");
 	if (res.IsEmpty()) {
 		LOGE("Cannot find android.js");
@@ -1210,7 +1213,7 @@ int BGJSContext::run() {
     LOGD("run: Script creating");
 	Handle<Value> result = Local<Script>::New(this->_isolate, res)->Run();
     LOGD("run: Script created");
-	res.Reset();
+	BGJS_CLEAR_PERSISTENT(res);
 
 	if (result.IsEmpty()) {
 		// Print errors that happened during execution.
@@ -1244,8 +1247,8 @@ void BGJSContext::setLocale(const char* locale, const char* lang,
 
 BGJSContext::~BGJSContext() {
 	LOGI("Cleaning up");
-	_script.Reset();
-	cloneObjectMethod.Reset();
+	BGJS_CLEAR_PERSISTENT(_script);
+	BGJS_CLEAR_PERSISTENT(cloneObjectMethod);
 
 	if (_locale) {
 		free(_locale);

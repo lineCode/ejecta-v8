@@ -96,8 +96,9 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			String::Utf8Value eventUtf8(args[0]->ToString());
 			// v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> > funcPersist(isolate, func);
 			v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* funcPersist = new v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >(isolate, func);
+			BGJS_NEW_PERSISTENT_PTR(funcPersist);
 			const char *event = *eventUtf8;
-			LOGD("BGJSView.on: persist is %p, event is %s", funcPersist, event);
+			// LOGD("BGJSView.on: persist is %p, event is %s", funcPersist, event);
 			if (strcmp(event, "event") == 0) {
 				view->_cbEvent.push_back(funcPersist);
 			} else if (strcmp(event, "close") == 0) {
@@ -140,8 +141,7 @@ BGJSView::BGJSView(Isolate* isolate, const BGJSContext *ctx, float pixelRatio, b
     Handle<FunctionTemplate> ft = FunctionTemplate::New(isolate, BGJSView::js_view_on, staticCallableThis);
     bgjsgl->Set(String::NewFromUtf8(isolate, "on"), ft);
 
-
-	this->jsViewOT.Reset(isolate, bgjsgl);
+    BGJS_RESET_PERSISTENT(isolate, this->jsViewOT, bgjsgl);
 }
 
 Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
@@ -161,7 +161,7 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 	LOGD("startJS. jsContext %p, jsC->c %p, objInstance %p configJson %s", this->_jsContext, BGJSInfo::_context.Get(isolate), objInstance, configJson ? configJson : "null");
 	objInstance->SetInternalField(0, External::New(isolate, reinterpret_cast<void *>(this)));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
-	this->_jsObj.Reset(isolate, objInstance);
+	BGJS_RESET_PERSISTENT(isolate, this->_jsObj, objInstance);
 
 	Handle<Value> argv[5] = { uiObj, objInstance, config, Number::New(isolate, configId),
 	    Number::New(isolate, hasIntradayQuotes) };
@@ -240,22 +240,22 @@ BGJSView::~BGJSView() {
 	while (!_cbClose.empty()) {
 		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbClose.back();
 		_cbClose.pop_back();
-		item->Reset();
+		BGJS_CLEAR_PERSISTENT_PTR(item);
 	}
 	while (!_cbResize.empty()) {
 		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbResize.back();
 		_cbResize.pop_back();
-		item->Reset();
+		BGJS_CLEAR_PERSISTENT_PTR(item);
 	}
 	while (!_cbEvent.empty()) {
 		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbEvent.back();
 		_cbEvent.pop_back();
-		item->Reset();
+		BGJS_CLEAR_PERSISTENT_PTR(item);
 	}
 	while (!_cbRedraw.empty()) {
 		v8::Persistent<v8::Object, v8::CopyablePersistentTraits<v8::Object> >* item = _cbRedraw.back();
 		_cbRedraw.pop_back();
-		item->Reset();
+		BGJS_CLEAR_PERSISTENT_PTR(item);
 	}
-	this->jsViewOT.Reset();
+	BGJS_CLEAR_PERSISTENT(this->jsViewOT);
 }

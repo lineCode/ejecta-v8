@@ -85,7 +85,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (J
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong nativePtr) {
 	if (nativePtr) {
 		Persistent<Function, v8::CopyablePersistentTraits<v8::Function> > func = *(((Persistent<Function, v8::CopyablePersistentTraits<v8::Function> >*)nativePtr));
-		func.Reset();
+		BGJS_CLEAR_PERSISTENT(func);
 	}
 }
 

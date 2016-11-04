@@ -10,17 +10,17 @@ android {
         }
     }
 
-    /* splits {
+    splits {
         abi {
             enable true
             reset()
-            include 'x86', 'armeabi-v7a'
+            include 'armeabi-v7a'// , 'x86'
             universalApk false
         }
-    } */
+    }
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"

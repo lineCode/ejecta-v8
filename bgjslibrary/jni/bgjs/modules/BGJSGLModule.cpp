@@ -945,7 +945,7 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 	Local<Context> v8Context = BGJSContext::_context.Get(isolate);
 	Local<Function> gClassRefLocal = *reinterpret_cast<Local<Function>*>(&BGJSGLModule::g_classRefContext2dGL);
 	Local<Object> jsObj = gClassRefLocal->NewInstance();
-	context2d->_jsValue.Reset(isolate, jsObj);
+	BGJS_RESET_PERSISTENT(isolate, context2d->_jsValue, jsObj);
 	context2d->_jsValue.SetWeak<BGJSContext2dGL>(context2d, js_context_destruct, WeakCallbackType::kInternalFields);
 	context2d->context = canvas->_view->context2d;
 	jsObj->SetInternalField(0, External::New(isolate, context2d));
@@ -989,7 +989,7 @@ void BGJSGLModule::doRequire(v8::Isolate* isolate, v8::Handle<v8::Object> target
 
 	// bgjsgl->Set(String::NewFromUtf8(isolate, "log"), FunctionTemplate::New(BGJSGLModule::log));
 	Local<Function> instance = bgjshtmlft->GetFunction();
-	BGJSGLModule::g_classRefCanvasGL.Reset(isolate, instance);
+	BGJS_RESET_PERSISTENT(isolate, BGJSGLModule::g_classRefCanvasGL, instance);
 	Handle<Object> exports = instance->NewInstance();
 
 	// Create the template for Canvas objects
@@ -1090,7 +1090,7 @@ void BGJSGLModule::doRequire(v8::Isolate* isolate, v8::Handle<v8::Object> target
 	canvasot->Set(String::NewFromUtf8(isolate, "clipY"),
 			FunctionTemplate::New(isolate, js_context_clipY));
 
-	g_classRefContext2dGL.Reset(isolate, canvasft->GetFunction());
+	BGJS_RESET_PERSISTENT(isolate, g_classRefContext2dGL, canvasft->GetFunction());
 
 	// g_classRefContext2dGL
 

@@ -20,6 +20,8 @@
 #include <string>
 #include <set>
 
+#include <mallocdebug.h>
+
 class BGJSGLView;
 
 #define MAX_FRAME_REQUESTS 10
