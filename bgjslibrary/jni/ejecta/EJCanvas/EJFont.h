@@ -7,19 +7,19 @@ class EJCanvasContext;
 
 typedef struct
 {
-    wchar_t charcode;
+    uint32_t codepoint;
     float kerning;
 } kerning_t;
 
 typedef struct
 {
-    wchar_t charcode;
+    uint32_t codepoint;
     int width, height;
     int offset_x, offset_y;
     float advance_x, advance_y;
     float s0, t0, s1, t1;
     size_t kerning_count;
-    kerning_t kerning[24];
+    kerning_t kerning[1];
 } texture_glyph_t;
 
 typedef struct
@@ -34,7 +34,7 @@ typedef struct
     float ascender;
     float descender;
     size_t glyphs_count;
-    texture_glyph_t glyphs[108];
+    texture_glyph_t glyphs[96];
 } texture_font_t;
 
 class EJFont {
@@ -43,7 +43,7 @@ private:
 	EJTexture* _texture;
 	float _scale;
 	bool _copy;
-	wchar_t* _utf32buffer;
+	uint32_t* _utf32buffer;
 	int _utf32bufsize;
     bool _isFilled;
 public:

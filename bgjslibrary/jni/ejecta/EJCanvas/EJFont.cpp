@@ -10,12 +10,12 @@
 /*#include "fonts/roboto_regular-15.h"
 #include "fonts/roboto_regular-24.h"
 #include "fonts/roboto_regular-30.h" */
-/* #include "fonts/roboto-medium-15.h"
 #include "fonts/roboto-medium-24.h"
-#include "fonts/roboto-medium-30.h" */
-#include "fonts/tahoma-15.h"
+#include "fonts/roboto-medium-30.h" 
+#include "fonts/roboto-medium-40.h" 
+/* #include "fonts/tahoma-15.h"
 #include "fonts/tahoma-24.h"
-#include "fonts/tahoma-30.h"
+#include "fonts/tahoma-30.h" */
 #include "GLcompat.h"
 #include "NdkMisc.h"
 #include <utf8.h>
@@ -34,20 +34,19 @@ EJFont::EJFont (const char* font, int size, bool useFill, float cs) {
 	_copy = false;
     _isFilled = useFill;
 
-	/*
-	_font = &font_roboto_medium_15;
-	if (realPxSize > 24) {
+	_font = &font_roboto_medium_24;
+	if (realPxSize >= 40) {
+		_font = &font_roboto_medium_40;
+	} else if (realPxSize >= 30) {
 		_font = &font_roboto_medium_30;
-	} else if (realPxSize > 15) {
-		_font = &font_roboto_medium_24;
-	} */
-	_font = &font_tahoma_15;
+	} 
+	// _font = &font_tahoma_15;
 
-	if (realPxSize > 24) {
+	/* if (realPxSize > 24) {
 		_font = &font_tahoma_30;
 	} else if (realPxSize > 15) {
 		_font = &font_tahoma_24;
-	}
+	} */
 	if (_font->size != (float)pxSize || cs != 1.0) {
 		_scale = (float)pxSize / _font->size;
 		// LOGI("Scaling font to %f, wanted size is %f (%d), font size is %f, cs is %f, realPx %f", _scale, pxSize, size, _font->size, cs, realPxSize);
@@ -75,7 +74,7 @@ EJFont::EJFont (const char* font, int size, bool useFill, float cs) {
 		_scale = 1;
 	}
 	_utf32bufsize = 4096;
-	_utf32buffer = (wchar_t*)malloc(_utf32bufsize);
+	_utf32buffer = (uint32_t*)malloc(_utf32bufsize);
 
 	/* for (int i = 0; i < _font->tex_height * _font->tex_width; ++i) {
 		GLubyte alpha = _font->tex_data[i];
@@ -100,7 +99,7 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
 
     if (length * 4 >= _utf32bufsize) {
     	_utf32bufsize = length * 4 + 4;
-    	_utf32buffer = (wchar_t*)realloc(_utf32buffer, _utf32bufsize);
+    	_utf32buffer = (uint32_t*)realloc(_utf32buffer, _utf32bufsize);
     }
 
     utf8::utf8to32(utf8string, utf8string + rawLength, _utf32buffer);
@@ -135,29 +134,23 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
 
     toContext->save();
     toContext->setTexture(_texture);
-    for( i=0; i<length; ++i)
-    {
+    for (i=0; i<length; ++i) {
         texture_glyph_t *glyph = 0;
-        for( j=0; j<_font->glyphs_count; ++j)
-        {
-            if( _font->glyphs[j].charcode == _utf32buffer[i] )
-            {
+        for (j=0; j<_font->glyphs_count; ++j) {
+            if (_font->glyphs[j].codepoint == _utf32buffer[i]) {
                 glyph = &(_font->glyphs[j]);
                 break;
             }
         }
-        if( !glyph )
-        {
+        if (!glyph) {
             continue;
         }
 
         // Find next glyph for kerning
         if (i < length - 1) {
-        	wchar_t nextCode = _utf32buffer[i+1];
-            for( k=0; k < glyph->kerning_count; ++k)
-            {
-                if( glyph->kerning[k].charcode == nextCode )
-                {
+        	uint32_t nextCode = _utf32buffer[i+1];
+            for( k=0; k < glyph->kerning_count; ++k) {
+                if (glyph->kerning[k].codepoint == nextCode) {
                     pen_x += (glyph->kerning[k].kerning * _scale);
                     // LOGI("Kerning found for char %c %c: %f", (char)glyph->charcode, nextCode, (glyph->kerning[k].kerning * _scale));
                     break;
@@ -180,12 +173,12 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
             glTexCoord2f( glyph->s1, glyph->t0 ); glVertex2i( x+w, y   );
         }
         glEnd(); */
-        // pen_x += glyph->advance_x;
-        if (w < 2) {
+        pen_x += glyph->advance_x;
+        /* if (w < 2) {
         	pen_x += 5;
         } else {
         	pen_x += w + 1;
-        }
+        } */
         // pen_y += glyph->advance_y;
     }
     toContext->restore();
@@ -199,43 +192,37 @@ float EJFont::measureString (const char* utf8string) {
 
     if (length * 4 >= _utf32bufsize) {
     	_utf32bufsize = length * 4 + 4;
-    	_utf32buffer = (wchar_t*)realloc(_utf32buffer, _utf32bufsize);
+    	_utf32buffer = (uint32_t*)realloc(_utf32buffer, _utf32bufsize);
     }
 
     utf8::utf8to32(utf8string, utf8string + rawLength, _utf32buffer);
 
     float width = 0.0f;
-    for( i=0; i<length; ++i)
-    {
+    for (i=0; i<length; ++i) {
         texture_glyph_t *glyph = 0;
-        for( j=0; j<_font->glyphs_count; ++j)
-        {
-            if( _font->glyphs[j].charcode == _utf32buffer[i] )
-            {
+        for (j=0; j<_font->glyphs_count; ++j) {
+            if (_font->glyphs[j].codepoint == _utf32buffer[i]) {
                 glyph = &(_font->glyphs[j]);
                 break;
             }
         }
-        if( !glyph )
-        {
+        if (!glyph) {
             continue;
         }
 
-        // width += glyph->advance_x;
-        float w = glyph->width;
-        if (w < 2) {
+        width += glyph->advance_x;
+        // float w = glyph->width;
+        /* if (w < 2) {
         	width += 5;
         } else {
         	width += w + 1;
-        }
+        } */
 
         // Find next glyph for kerning
         if (i < length - 1) {
-        	wchar_t nextCode = _utf32buffer[i+1];
-            for( k=0; k < glyph->kerning_count; ++k)
-            {
-                if( glyph->kerning[k].charcode == nextCode )
-                {
+        	uint32_t nextCode = _utf32buffer[i+1];
+            for (k=0; k < glyph->kerning_count; ++k) {
+                if (glyph->kerning[k].codepoint == nextCode) {
                     width += (glyph->kerning[k].kerning * _scale);
                     break;
                 }
@@ -250,42 +237,38 @@ float EJFont::measureStringFromBuffer (int length) {
 
 
     float width = 0.0f;
-    for( i=0; i<length; ++i)
-    {
+    for (i=0; i<length; ++i) {
         texture_glyph_t *glyph = 0;
-        for( j=0; j<_font->glyphs_count; ++j)
-        {
-            if( _font->glyphs[j].charcode == _utf32buffer[i] )
-            {
+        for (j=0; j<_font->glyphs_count; ++j) {
+            if (_font->glyphs[j].codepoint == _utf32buffer[i]) {
                 glyph = &(_font->glyphs[j]);
                 break;
             }
         }
-        if( !glyph )
-        {
+        if (!glyph) {
             continue;
         }
 
+        width += glyph->offset_x;
+
         // Find next glyph for kerning
         if (i < length - 1) {
-        	wchar_t nextCode = _utf32buffer[i+1];
-            for( k=0; k < glyph->kerning_count; ++k)
-            {
-                if( glyph->kerning[k].charcode == nextCode )
-                {
+        	uint32_t nextCode = _utf32buffer[i+1];
+            for (k=0; k < glyph->kerning_count; ++k) {
+                if (glyph->kerning[k].codepoint == nextCode) {
                     width += (glyph->kerning[k].kerning * _scale);
                     break;
                 }
             }
         }
 
-        // width += glyph->advance_x;
-        float w = glyph->width;
-        if (w < 2) {
+         width += glyph->advance_x;
+        // float w = glyph->width;
+        /* if (w < 2) {
         	width += 5;
         } else {
         	width += w + 1;
-        }
+        } */
     }
     return width;
 }
