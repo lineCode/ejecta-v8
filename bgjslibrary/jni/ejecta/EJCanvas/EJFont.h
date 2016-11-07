@@ -45,6 +45,7 @@ private:
 	bool _copy;
 	wchar_t* _utf32buffer;
 	int _utf32bufsize;
+    bool _isFilled;
 public:
 	EJFont (const char* font, int size, bool fill, float contentScale);
 	void drawString (const char* text, EJCanvasContext* context, float x, float y);

@@ -32,6 +32,7 @@ EJFont::EJFont (const char* font, int size, bool useFill, float cs) {
 	float realPxSize = pxSize * cs;
 
 	_copy = false;
+    _isFilled = useFill;
 
 	/*
 	_font = &font_roboto_medium_15;
@@ -51,7 +52,8 @@ EJFont::EJFont (const char* font, int size, bool useFill, float cs) {
 		_scale = (float)pxSize / _font->size;
 		// LOGI("Scaling font to %f, wanted size is %f (%d), font size is %f, cs is %f, realPx %f", _scale, pxSize, size, _font->size, cs, realPxSize);
 		texture_font_t* copy =  (texture_font_t*)malloc(sizeof(texture_font_t));
-		// TODO: This is wrong, we only need to duplicate and change metadata actually. Hmm
+		// TODO: This is wrong, this changes the originals since we only copied the pointer
+        // It would be much better to leave this all as-is and scale it during the blitting
 		memcpy (copy, _font, sizeof(texture_font_t));
 		for (int i = 0; i < copy->glyphs_count; ++i) {
 			texture_glyph_t* glyph = &(copy->glyphs[i]);
@@ -167,7 +169,7 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
         float y = (pen_y - glyph->offset_y);
         float w  = (glyph->width);
         float h  = (glyph->height);
-        toContext->pushRectX(x, y, w, h, glyph->s0, glyph->t0 /* - 1.0f/256 */, glyph->s1 - glyph->s0, glyph->t1 - glyph->t0 /* + 1.0f/256 */, toContext->state->strokeColor, toContext->state->transform);
+        toContext->pushRectX(x, y, w, h, glyph->s0, glyph->t0 /* - 1.0f/256 */, glyph->s1 - glyph->s0, glyph->t1 - glyph->t0 /* + 1.0f/256 */, _isFilled ? toContext->state->fillColor : toContext->state->strokeColor, toContext->state->transform);
         /* glBegin( GL_TRIANGLES );
         {
             glTexCoord2f( glyph->s0, glyph->t0 ); glVertex2i( x,   y   );
