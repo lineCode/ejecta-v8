@@ -40,36 +40,10 @@ EJFont::EJFont (const char* font, int size, bool useFill, float cs) {
 	} else if (realPxSize >= 30) {
 		_font = &font_roboto_medium_30;
 	} 
-	// _font = &font_tahoma_15;
 
-	/* if (realPxSize > 24) {
-		_font = &font_tahoma_30;
-	} else if (realPxSize > 15) {
-		_font = &font_tahoma_24;
-	} */
 	if (_font->size != (float)pxSize || cs != 1.0) {
 		_scale = (float)pxSize / _font->size;
 		// LOGI("Scaling font to %f, wanted size is %f (%d), font size is %f, cs is %f, realPx %f", _scale, pxSize, size, _font->size, cs, realPxSize);
-		texture_font_t* copy =  (texture_font_t*)malloc(sizeof(texture_font_t));
-		// TODO: This is wrong, this changes the originals since we only copied the pointer
-        // It would be much better to leave this all as-is and scale it during the blitting
-		memcpy (copy, _font, sizeof(texture_font_t));
-		for (int i = 0; i < copy->glyphs_count; ++i) {
-			texture_glyph_t* glyph = &(copy->glyphs[i]);
-			glyph->offset_x = glyph->offset_x * _scale;
-			glyph->offset_y = glyph->offset_y * _scale;
-			glyph->width = glyph->width * _scale;
-			glyph->height = glyph->height * _scale;
-			glyph->advance_x = glyph->advance_x * _scale;
-			glyph->advance_y = glyph->advance_y * _scale;
-		}
-		copy->size *= _scale;
-		copy->ascender *= _scale;
-		copy->descender *= _scale;
-		copy->height *= _scale;
-		copy->linegap *= _scale;
-		_font = copy;
-		_copy = true;
 	} else {
 		_scale = 1;
 	}
@@ -121,16 +95,16 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
 			break;
 		case kEJTextBaselineTop:
 		case kEJTextBaselineHanging:
-			pen_y += PT_TO_PX(_font->ascender /* + ascentDelta */);
+			pen_y += PT_TO_PX(_font->ascender * _scale/* + ascentDelta */);
 			break;
 		case kEJTextBaselineMiddle:
-			pen_y += PT_TO_PX(_font->ascender - 0.5*_font->height);
+			pen_y += PT_TO_PX(_font->ascender * _scale - (0.5*_font->height * _scale));
 			break;
 		case kEJTextBaselineBottom:
-			pen_y += PT_TO_PX(_font->descender);
+			pen_y += PT_TO_PX(_font->descender * _scale);
 			break;
 	}
-	pen_y = ceil(pen_y);
+	// pen_y = floor(pen_y);
 
     toContext->save();
     toContext->setTexture(_texture);
@@ -158,10 +132,11 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
             }
         }
 
-        float x = (pen_x + glyph->offset_x);
-        float y = (pen_y - glyph->offset_y);
-        float w  = (glyph->width);
-        float h  = (glyph->height);
+
+        float x = (pen_x + glyph->offset_x * _scale);
+        float y = (pen_y - glyph->offset_y * _scale);
+        float w  = (glyph->width * _scale);
+        float h  = (glyph->height * _scale);
         toContext->pushRectX(x, y, w, h, glyph->s0, glyph->t0 /* - 1.0f/256 */, glyph->s1 - glyph->s0, glyph->t1 - glyph->t0 /* + 1.0f/256 */, _isFilled ? toContext->state->fillColor : toContext->state->strokeColor, toContext->state->transform);
         /* glBegin( GL_TRIANGLES );
         {
@@ -173,7 +148,7 @@ void EJFont::drawString (const char* utf8string, EJCanvasContext* toContext, flo
             glTexCoord2f( glyph->s1, glyph->t0 ); glVertex2i( x+w, y   );
         }
         glEnd(); */
-        pen_x += glyph->advance_x;
+        pen_x += glyph->advance_x * _scale;
         /* if (w < 2) {
         	pen_x += 5;
         } else {
@@ -210,7 +185,7 @@ float EJFont::measureString (const char* utf8string) {
             continue;
         }
 
-        width += glyph->advance_x;
+        width += glyph->advance_x * _scale;
         // float w = glyph->width;
         /* if (w < 2) {
         	width += 5;
@@ -249,7 +224,7 @@ float EJFont::measureStringFromBuffer (int length) {
             continue;
         }
 
-        width += glyph->offset_x;
+        // width += glyph->offset_x * _scale;
 
         // Find next glyph for kerning
         if (i < length - 1) {
@@ -262,7 +237,7 @@ float EJFont::measureStringFromBuffer (int length) {
             }
         }
 
-         width += glyph->advance_x;
+         width += glyph->advance_x * _scale;
         // float w = glyph->width;
         /* if (w < 2) {
         	width += 5;
