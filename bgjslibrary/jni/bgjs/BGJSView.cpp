@@ -258,4 +258,5 @@ BGJSView::~BGJSView() {
 		BGJS_CLEAR_PERSISTENT_PTR(item);
 	}
 	BGJS_CLEAR_PERSISTENT(this->jsViewOT);
+	BGJS_CLEAR_PERSISTENT(this->_jsObj);
 }

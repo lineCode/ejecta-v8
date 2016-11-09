@@ -18,7 +18,8 @@
 // #define strcpy
 
 #define BGJS_RESET_PERSISTENT(isolate, pers, data) LOGD("BGJS_PERS_RESET %p file %s line %i func %s", &pers, __FILE__, __LINE__, __func__); \
-pers.Reset(isolate, data);
+pers.Reset(isolate, data); \
+LOGD("BGJS_PERS_NEW %p file %s line %i func %s", &pers, __FILE__, __LINE__, __func__); 
 
 #define BGJS_NEW_PERSISTENT_PTR(persistent) LOGD("BGJS_PERS_NEW_PTR %p file %s line %i func %s", persistent, __FILE__, __LINE__, __func__);
 #define BGJS_NEW_PERSISTENT(persistent) LOGD("BGJS_PERS_NEW %p file %s line %i func %s", &persistent, __FILE__, __LINE__, __func__);

@@ -958,7 +958,9 @@ void BGJSGLModule::js_canvas_getContext(const v8::FunctionCallbackInfo<v8::Value
 }
 
 void BGJSGLModule::js_context_destruct(const v8::WeakCallbackInfo<BGJSContext2dGL>& data) {
+	LOGD("js context destruct %p", data);
 	// delete (BGJSContext2dGL*)data.GetInternalField(0);
+	BGJS_CLEAR_PERSISTENT(data.GetParameter()->_jsValue);
 	delete (data.GetParameter());
 	/* BGJSContext2dGL *context2d = data.GetParameter();
 	context2d->_jsValue.Reset();
@@ -1229,6 +1231,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
 	Isolate* isolate = ct->getIsolate();
 	Isolate::Scope isolateScope(isolate);
+	Context::Scope context_scope(ct->_context.Get(isolate));
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
@@ -1246,8 +1249,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_sendTouchEvent(
 		return;
 	} */
 
-    Local<Context> v8Context = ct->_context.Get(isolate);
-	Context::Scope context_scope(v8Context);
+    // Local<Context> v8Context = ct->_context.Get(isolate);
 	BGJSGLView *view = (BGJSGLView*) objPtr;
 
 	// Create event object

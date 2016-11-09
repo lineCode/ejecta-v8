@@ -712,7 +712,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 	v8::Locker l(_isolate);
 	HandleScope scope(_isolate);
 
-	Context::Scope context_scope(Local<Context>::New(_isolate, BGJSContext::_context.Get(_isolate)));
+	// Context::Scope context_scope(BGJSContext::_context.Get(_isolate));
 
 	TryCatch trycatch;
 	bool didDraw = false;
@@ -1082,7 +1082,6 @@ void BGJSContext::createContext() {
     Local<Context> context = v8::Context::New(_isolate, NULL,
                                         Local<ObjectTemplate>::New(_isolate, BGJSInfo::_global.Get(_isolate)));
     LOGI("createContext v8context is %p, BGJSContext is %p", context, this);
-    // context->Enter();
 	BGJSInfo::_context.Set(_isolate, context);
 	BGJSInfo::_jscontext = this;
 	this->_context.Set(_isolate, context);

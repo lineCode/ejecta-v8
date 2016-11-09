@@ -300,7 +300,7 @@ public class V8Engine extends Thread implements Handler.Callback {
     }
 
 	
-	protected void cleanup () {
+	public void cleanup () {
 		V8Timeout[] timeOutCopy;
 		synchronized (mTimeouts) {
 			timeOutCopy = new V8Timeout[mTimeoutsToGC.size()];
@@ -469,7 +469,7 @@ public class V8Engine extends Thread implements Handler.Callback {
 
 
 	public static final int TICK_SLEEP = 250;
-	private static final int DELAY_CLEANUP = 60 * 1000;
+	private static final int DELAY_CLEANUP = 10 * 1000;
 
 
 }
