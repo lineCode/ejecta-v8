@@ -747,14 +747,13 @@ static Handle<Value> js_context_clipY(const Arguments& args) {
 
 	__context->clipY(y1, y2);
 
+	LOGD("js clipY called from %f to %f", y1, y2);
+
 	return v8::Undefined();
 }
 
 static Handle<Value> js_context_clip(const Arguments& args) {
-	/*
-	 void clip();
-	 */
-	//assert(argumentCount==0);
+	LOGD("js clip called: not implemented");
 	return v8::Undefined();
 }
 
@@ -1153,9 +1152,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_close(JNIEnv * env,
 	Context::Scope context_scope(ct->_context);
 
 	BGJSGLView *view = (BGJSGLView*) objPtr;
+	view->close();
 
 	ct->unregisterGLView(view);
-	view->close();
 	env->DeleteGlobalRef(view->_javaGlView);
 	delete (view);
 }
