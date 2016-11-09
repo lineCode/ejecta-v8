@@ -152,6 +152,8 @@ void BGJSGLView::close() {
 		}
 	}
 
+	LOGD("BGJSGLView close");
+
 	call(Isolate::GetCurrent(), _cbClose);
 }
 

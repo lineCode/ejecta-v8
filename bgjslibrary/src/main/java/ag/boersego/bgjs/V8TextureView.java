@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.opengl.EGL14;
 import android.opengl.GLES10;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -49,6 +48,7 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
 
 
 	protected boolean DEBUG;
+	private static final boolean LOG_FPS = true && BuildConfig.DEBUG;
 	private static final int MAX_NUM_TOUCHES = 10;
 	private static final int TOUCH_SLOP = 5;
 	private static final String TAG = "V8TextureView";
@@ -698,7 +698,7 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
 				final long startRender = System.currentTimeMillis();
 				final long now = startRender / 1000;
 				if (now != mLastRenderSec) {
-					if (DEBUG) { Log.d (TAG, "FPS: " + mRenderCnt); }
+					if (LOG_FPS) { Log.d (TAG, "FPS: " + mRenderCnt); }
 					mRenderCnt = 0;
 					mLastRenderSec = now;
 				}
@@ -708,9 +708,9 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
 
 				final boolean didDraw = ClientAndroid.step(V8Engine.getInstance().getNativePtr(), mJSId);
 
-                if (DEBUG) {
+                /* if (DEBUG) {
                     Log.d(TAG, "Draw for JSID " + String.format("0x%8s", Long.toHexString(mJSId)).replace(' ', '0') + ", TV " + V8TextureView.this);
-                }
+                } */
 
 				mRenderCnt++;
 				

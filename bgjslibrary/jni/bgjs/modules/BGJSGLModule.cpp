@@ -768,6 +768,7 @@ static void js_context_clipY(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	float y2 = Local<Number>::Cast(args[1])->Value();
 
 	__context->clipY(y1, y2);
+	LOGD("js clipY called from %f to %f", y1, y2);
 
 	args.GetReturnValue().SetUndefined();
 }
@@ -777,6 +778,8 @@ static void js_context_clip(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	 void clip();
 	 */
 	//assert(argumentCount==0);
+	LOGD("js clip called: not implemented");
+
 	args.GetReturnValue().SetUndefined();
 }
 
@@ -1196,9 +1199,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_close(JNIEnv * env,
 	Context::Scope context_scope(v8Context);
 
 	BGJSGLView *view = (BGJSGLView*) objPtr;
+	view->close();
 
 	ct->unregisterGLView(view);
-	view->close();
 	env->DeleteGlobalRef(view->_javaGlView);
 	delete (view);
 }
