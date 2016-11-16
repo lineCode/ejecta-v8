@@ -4,6 +4,7 @@
 #define MSAA_SAMPLES 2
 
 #include "../ejecta/EJCanvas/EJCanvasContext.h"
+#include "../ejecta/EJCanvas/CGCompat.h"
 
 /**
  * BGJSCanvasContext
@@ -14,7 +15,8 @@
  */
 
 typedef struct {
-	float clipY1,clipY2;
+	CGRect clipRect;
+	bool clip;
 } BGJSCanvasState;
 
 class BGJSCanvasContext : public EJCanvasContext {
@@ -27,6 +29,7 @@ public:
 	void save();
 	void restore();
 	void clipY (float y, float y2);
+	void clipRect (CGRect rect);
 	void startRendering();
 	void endRendering();
 

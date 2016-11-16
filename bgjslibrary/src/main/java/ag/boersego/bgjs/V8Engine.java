@@ -49,7 +49,7 @@ public class V8Engine extends Thread implements Handler.Callback {
 	protected float mDensity;
 
 	private static final String TAG = "V8Engine";
-	private static boolean DEBUG = true && BuildConfig.DEBUG;
+	private static boolean DEBUG = false && BuildConfig.DEBUG;
     private V8UrlCache mCache;
 	private ThreadPoolExecutor mTPExecutor;
     private OkHttpClient mHttpClient;

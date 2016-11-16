@@ -48,7 +48,7 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
 
 
 	protected boolean DEBUG;
-	private static final boolean LOG_FPS = true && BuildConfig.DEBUG;
+	private static final boolean LOG_FPS = false && BuildConfig.DEBUG;
 	private static final int MAX_NUM_TOUCHES = 10;
 	private static final int TOUCH_SLOP = 5;
 	private static final String TAG = "V8TextureView";
@@ -530,7 +530,7 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
      * @return pointer to JNI object
      */
     protected long createGL () {
-        return ClientAndroid.createGL(V8Engine.getInstance().getNativePtr(), this, mScaling, true, getMeasuredWidth(), getMeasuredHeight());
+        return ClientAndroid.createGL(V8Engine.getInstance().getNativePtr(), this, mScaling, false, getMeasuredWidth(), getMeasuredHeight());
     }
 
 	/**

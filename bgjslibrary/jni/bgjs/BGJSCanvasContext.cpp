@@ -71,34 +71,48 @@ void BGJSCanvasContext::save() {
 void BGJSCanvasContext::restore() {
 	EJCanvasContext::restore();
 	state2 = &stateStack2[stateIndex];
-	clipY (state2->clipY1, state2->clipY2);
+	if (!state2->clip) {
+		glDisable(GL_SCISSOR_TEST);
+	} else {
+		clipRect(state2->clipRect);
+	}
 }
 
 void BGJSCanvasContext::clipY (float y, float y2) {
 
+	CGRect rect;
+	rect.origin.x = 0;
+	rect.origin.y = y;
+	rect.size.width = 5000;
+	rect.size.height = y2 - y;
+
+	this->clipRect(rect);
+}
+
+void BGJSCanvasContext::clipRect(CGRect rect) {
+
 	flushBuffers();
 
-	state2->clipY1 = y;
-	state2->clipY2 = y2;
+	float x, y, x2, y2;
 
-	if(y==y2) {
-		#ifdef DEBUG
-			LOGD("Clipping disabled");
-		#endif
-		glDisable(GL_SCISSOR_TEST);
-		return;
-	}
-
-	y = viewportHeight - EJVector2ApplyTransform( EJVector2Make(0, y), state->transform).y; // *backingStoreRatio;
-	y2 = viewportHeight - EJVector2ApplyTransform( EJVector2Make(0, y2), state->transform).y; // *backingStoreRatio;
-
-	#ifdef DEBUG
-		LOGD("Clipping y=%f, y2=%f, so going from %f to %f", state2->clipY1, state2->clipY2, y2, (y-y2));
-	#endif
-
-	glEnable(GL_SCISSOR_TEST);
-	glScissor(0,y2,5000,y-y2);
-	checkGlError("glScissor clipY");
+    state2->clipRect = rect;
+    state2->clip = true;
+    
+    // this code will obviously NOT work if the transform includes rotation
+    // but it WILL work with translation; charting does not rotate clipping regions,
+    // and we would not be able to use the scissor test for that anyway so thats fine for now
+    
+    // opengl (0,0) is bottom left, canvas (0,0) is top left
+    // => invert y
+    y = viewportHeight - EJVector2ApplyTransform( EJVector2Make(0, rect.origin.y), state->transform).y; // *backingStoreRatio;
+    y2 = viewportHeight - EJVector2ApplyTransform( EJVector2Make(0, rect.origin.y+rect.size.height), state->transform).y; // *backingStoreRatio;
+    
+    x =  EJVector2ApplyTransform( EJVector2Make(rect.origin.x, 0), state->transform).x; // *backingStoreRatio;
+    x2 = EJVector2ApplyTransform( EJVector2Make(rect.origin.x + rect.size.width, 0), state->transform).x; // *backingStoreRatio;
+    
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x,y2,x2-x,y-y2);
+    checkGlError("glScissor clipRect");
 }
 
 

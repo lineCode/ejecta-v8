@@ -360,7 +360,6 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 	WrapPersistentFunc* ws = (WrapPersistentFunc*)jsCbPtr;
 	Local<Function> callbackP = Local<Function>::New(isolate, *reinterpret_cast<Local<Function>*>(&ws->callbackFunc));
 
-	LOGI("timeoutCb called, cbPtr is %llu, thisObj %llu, ctxPtr %llu", jsCbPtr, thisPtr, ctxPtr);
 
 	if (runCb) {
 		int argcount = 0;

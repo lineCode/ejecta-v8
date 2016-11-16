@@ -18,8 +18,8 @@
 
 #include "os-detection.h"
 
-// #undef DEBUG
-#define DEBUG 1
+#undef DEBUG
+// #define DEBUG 1
 //#undef DEBUG
 // #define DEBUG_GL 0
 #undef DEBUG_GL

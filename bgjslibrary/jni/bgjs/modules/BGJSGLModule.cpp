@@ -777,7 +777,34 @@ static void js_context_clipY(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	float y2 = Local<Number>::Cast(args[1])->Value();
 
 	__context->clipY(y1, y2);
+
+#ifdef DEBUG
 	LOGD("js clipY called from %f to %f", y1, y2);
+#endif
+
+	args.GetReturnValue().SetUndefined();
+}
+
+static void js_context_clipRect(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	CONTEXT_FETCH();
+
+	REQUIRE_PARAMS(4);
+	float inputX = Local<Number>::Cast(args[0])->Value();
+	float inputY = Local<Number>::Cast(args[1])->Value();
+	float w = Local<Number>::Cast(args[2])->Value();
+	float h = Local<Number>::Cast(args[3])->Value();
+
+#ifdef DEBUG
+	LOGD("js clipRect called from %f, %f to %f, %f", inputX, inputY, w, h);
+#endif
+
+	CGRect rect;
+	rect.origin.x = inputX;
+	rect.origin.y = inputY;
+	rect.size.width = w;
+	rect.size.height = h;
+
+	__context->clipRect(rect);
 
 	args.GetReturnValue().SetUndefined();
 }
@@ -787,7 +814,9 @@ static void js_context_clip(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	 void clip();
 	 */
 	//assert(argumentCount==0);
+#ifdef DEBUG
 	LOGD("js clip called: not implemented");
+#endif
 
 	args.GetReturnValue().SetUndefined();
 }
@@ -1085,6 +1114,7 @@ void BGJSGLModule::doRequire(v8::Isolate* isolate, v8::Handle<v8::Object> target
 	canvasot->Set(String::NewFromUtf8(isolate, "scrollPathIntoView"),
 			FunctionTemplate::New(isolate, js_context_scrollPathIntoView));
 	canvasot->Set(String::NewFromUtf8(isolate, "clip"), FunctionTemplate::New(isolate, js_context_clip));
+	canvasot->Set(String::NewFromUtf8(isolate, "clipRect"), FunctionTemplate::New(isolate, js_context_clipRect));
 	canvasot->Set(String::NewFromUtf8(isolate, "isPointInPath"),
 			FunctionTemplate::New(isolate, js_context_isPointInPath));
 	canvasot->Set(String::NewFromUtf8(isolate, "fillText"),
@@ -1105,7 +1135,6 @@ void BGJSGLModule::doRequire(v8::Isolate* isolate, v8::Handle<v8::Object> target
 			FunctionTemplate::New(isolate, js_context_clipY));
 
 	BGJS_RESET_PERSISTENT(isolate, g_classRefContext2dGL, canvasft->GetFunction());
-
 	// g_classRefContext2dGL
 
 	target->Set(String::NewFromUtf8(isolate, "exports"), exports);
