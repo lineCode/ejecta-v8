@@ -120,8 +120,8 @@ function domReady() {
         //h = window.innerHeight * window.devicePixelRatio;
         w = window.innerWidth;
         h = window.innerHeight;
-        w2 = w/2;
-        h2 = h/2;
+        w2 = w;
+        h2 = h;
 
         console.log("width, height: " + w + ", " + h);
 
