@@ -119,6 +119,19 @@ function startPlasma(ui,view,config) {
 	view.on('close',function() {
 	    requestNextFrame = null;
 	});
+
+	// Try to reproduce crash:
+	var ajax = require('ajax');
+	ajax({
+	    'success':function (data) {
+	        console.log("ajax success", data);
+	        requestAnimationFrame(animate, view);
+	    },
+	    'error':function(e) {
+	        console.error("ajax error", e);
+	    },
+	    'url':"http://heise.de/"
+	});
 }
 
 if (typeof document != "undefined") {
