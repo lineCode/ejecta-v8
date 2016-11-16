@@ -26,7 +26,7 @@
 
 using namespace v8;
 
-v8::Eternal<v8::Context> BGJSInfo::_context;
+v8::Persistent<v8::Context>* BGJSInfo::_context;
 v8::Eternal<v8::ObjectTemplate> BGJSInfo::_global;
 BGJSContext* BGJSInfo::_jscontext;
 
@@ -973,8 +973,7 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
 	v8::Locker l(isolate);
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
-
-	Context::Scope context_scope(BGJSContext::_context.Get(isolate));
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(BGJSContext::_context));
 
 	LOGD("load. Current context %p", isolate->GetCurrentContext());
 
@@ -1082,9 +1081,8 @@ void BGJSContext::createContext() {
     Local<Context> context = v8::Context::New(_isolate, NULL,
                                         Local<ObjectTemplate>::New(_isolate, BGJSInfo::_global.Get(_isolate)));
     LOGI("createContext v8context is %p, BGJSContext is %p", context, this);
-	BGJSInfo::_context.Set(_isolate, context);
+	BGJSInfo::_context = new Persistent<Context>(_isolate, context);
 	BGJSInfo::_jscontext = this;
-	this->_context.Set(_isolate, context);
 
 #ifdef ENABLE_DEBUGGER_SUPPORT
 	debug_message_context = v8::Persistent<v8::Context>::Persistent(isolate, BGJSInfo::_context);
@@ -1196,10 +1194,8 @@ int BGJSContext::run() {
 	// Create a stack-allocated handle scope.
 	HandleScope scope(this->_isolate);
 	v8::TryCatch try_catch;
-    Local<Context> context = BGJSContext::_context.Get(_isolate);
+    Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(BGJSContext::_context));
     // context->Enter();
-    LOGI("run context is %p", context);
-	Context::Scope context_scope(context);
 
 	// Run the android.js file
 	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > res = load("js/android.js");

@@ -158,7 +158,7 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 	}
 
 	Local<Object> objInstance = (*reinterpret_cast<Local<ObjectTemplate>*>(&this->jsViewOT))->NewInstance();
-	LOGD("startJS. jsContext %p, jsC->c %p, objInstance %p configJson %s", this->_jsContext, BGJSInfo::_context.Get(isolate), objInstance, configJson ? configJson : "null");
+	LOGD("startJS. jsContext %p, jsC->c %p, objInstance %p configJson %s", this->_jsContext, BGJSInfo::_context, objInstance, configJson ? configJson : "null");
 	objInstance->SetInternalField(0, External::New(isolate, reinterpret_cast<void *>(this)));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
 	BGJS_RESET_PERSISTENT(isolate, this->_jsObj, objInstance);
@@ -167,7 +167,8 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 	    Number::New(isolate, hasIntradayQuotes) };
 
 	Local<Value> res = this->_jsContext->callFunction(isolate,
-	        BGJSInfo::_context.Get(isolate)->Global(), fnName, 5,
+			(*reinterpret_cast<Local<Context>*>(BGJSInfo::_context))->Global(),
+	        fnName, 5,
 			argv);
 	if (res->IsNumber()) {
 		_contentObj = res->ToNumber()->Value();

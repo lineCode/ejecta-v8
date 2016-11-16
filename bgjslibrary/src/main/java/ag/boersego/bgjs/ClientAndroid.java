@@ -14,7 +14,7 @@ public class ClientAndroid {
 	public static native boolean ajaxDone(long ctxPtr, String data, int responseCode, long jsCbPtr, long thisObj, long errorCb, boolean success, boolean processData);
 	
 	// BGJSGLModule
-    public static native long createGL(long ctxPtr, V8TextureView gl2jniView, float pixelRatio, boolean noClearOnFlip);
+    public static native long createGL(long ctxPtr, V8TextureView gl2jniView, float pixelRatio, boolean noClearOnFlip, int width, int height);
     public static native int init(long ctxPtr, long objPtr, int width, int height, String callbackName);
     public static native boolean step(long ctxPtr, long jsPtr);
     public static native void setTouchPosition(long ctxPtr, long jsPtr, int x, int y);

@@ -44,7 +44,7 @@ extern unsigned int __page_size = getpagesize();
 #undef LOG_TAG
 #endif
 #define  LOG_TAG    "ClientAndroid"
-#define	DEBUG	false
+#define	DEBUG false
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
@@ -283,10 +283,11 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
           v8::ArrayBuffer::Allocator::NewDefaultAllocator();
     LOGI("Initialized createParams");
     v8::Isolate* isolate = v8::Isolate::New(create_params);
+    v8::Locker l (isolate);
 	isolate->Enter();
     LOGD("Initialized Isolate %p", isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    LOGD("Initialized isolateScope");
+    // v8::Isolate::Scope isolate_scope(isolate);
+    // LOGD("Initialized isolateScope");
 
 	BGJSContext* ct = new BGJSContext(isolate);
 
@@ -299,11 +300,14 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 	env->ReleaseStringUTFChars(timezone, tzStr);
 	ct->setClient(_client);
 	ct->createContext();
+	LOGD("BGJS context created");
 	AjaxModule::doRegister(isolate, ct);
 	BGJSGLModule::doRegister(isolate, ct);
+	LOGD("ClientAndroid init: doRegister done");
 
 	ct->registerModule("ajax", AjaxModule::doRequire);
 	ct->registerModule("canvas", BGJSGLModule::doRequire);
+	LOGD("ClientAndroid init: registerModule done");
 
 	return (jlong) ct;
 }
@@ -311,9 +315,9 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_load(JNIEnv * env,
 		jobject obj, jlong ctxPtr, jstring path) {
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	Isolate::Scope(ct->getIsolate());
 	v8::Locker l (ct->getIsolate());
-	Context::Scope context_scope(ct->_context.Get(ct->getIsolate()));
+	Isolate::Scope(ct->getIsolate());
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(ct->_context));
 	const char* pathStr = env->GetStringUTFChars(path, 0);
 	HandleScope scope (ct->getIsolate());
 	LOGD("clientAndroid load %s, context %p", pathStr, ct->getIsolate()->GetCurrentContext());
@@ -334,9 +338,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_run(JNIEnv * env,
 		LOGD("clientAndroid run");
 	}
 	BGJSContext* ct = (BGJSContext*) ctxPtr;
-	Isolate::Scope(ct->getIsolate());
 	v8::Locker l (ct->getIsolate());
-	Context::Scope context_scope(ct->_context.Get(ct->getIsolate()));
+	Isolate::Scope(ct->getIsolate());
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(ct->_context));
 	_client->envCache = env;
 	ct->run();
 }
@@ -345,13 +349,13 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jlong jsCbPtr, jlong thisPtr, jboolean cleanup, jboolean runCb) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
     v8::Isolate* isolate = context->getIsolate();
+    v8::Locker l (isolate);
 	Isolate::Scope isolateScope(isolate);
 	if (DEBUG) {
 		LOGD("clientAndroid timeoutCB");
 	}
 
-	v8::Locker l (isolate);
-	Context::Scope context_scope(context->_context.Get(isolate));
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
 
 	HandleScope scope (isolate);
 	TryCatch trycatch;
@@ -360,7 +364,7 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 	WrapPersistentObj* wo = (WrapPersistentObj*)thisPtr;
 	Local<Object> thisObj = (*reinterpret_cast<Local<Object>*>(&wo->obj));
 	WrapPersistentFunc* ws = (WrapPersistentFunc*)jsCbPtr;
-	Local<Function> callbackP = (*reinterpret_cast<Local<Function>*>(&ws->callbackFunc));
+	Local<Function> callbackP = Local<Function>::New(isolate, *reinterpret_cast<Local<Function>*>(&ws->callbackFunc));
 
 	LOGI("timeoutCb called, cbPtr is %llu, thisObj %llu, ctxPtr %llu", jsCbPtr, thisPtr, ctxPtr);
 
@@ -371,6 +375,9 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 		Handle<Value> result = callbackP->Call(thisObj, argcount, argarray);
 		if (result.IsEmpty()) {
 			BGJSContext::ReportException(&trycatch);
+		}
+		if (DEBUG) {
+			LOGI("timeoutCb finished");
 		}
 	}
 
@@ -388,10 +395,10 @@ JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_timeoutCB(
 JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_runCBBoolean (JNIEnv * env, jobject obj, jlong ctxPtr, jlong cbPtr, jlong thisPtr, jboolean b) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
     v8::Isolate* isolate = context->getIsolate();
+    v8::Locker l (isolate);
 	Isolate::Scope isolateScope(isolate);
 
-	v8::Locker l (isolate);
-	Context::Scope context_scope(context->_context.Get(isolate));
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
 
 	HandleScope scope(isolate);
 	TryCatch trycatch;

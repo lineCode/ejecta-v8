@@ -42,6 +42,11 @@ include $(PREBUILT_STATIC_LIBRARY)
 # Our JNI stuff
 include $(CLEAR_VARS)
 
+# Don't strip debug builds
+#ifeq ($(APP_OPTIM),debug)
+#    cmd-strip := 
+#endif
+
 LOCAL_MODULE	:= libbgjs
 #LOCAL_CFLAGS    :=  -g -fno-omit-frame-pointer -fno-strict-aliasing -I ~/bin/android-ndk-latest/sources/cxx-stl/stlport/stlport/ # -Werror #-Ijni/pixman/pixman -Ijni/cairo/src -Ijni/cairo-extra -Ijni/pixman-extra -Wno-missing-field-initializers -Wno-attributes
 #LOCAL_CFLAGS	:= -fcxx-exceptions 

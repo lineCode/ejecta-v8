@@ -87,8 +87,8 @@ function startPlasma(ui,view,config) {
     console.log("viewCreated called", arguments);
 	w = view.width;
 	h = view.height;
-	w2 = w / 2;
-	h2 = h/2;
+	w2 = w;
+	h2 = h;
 	requestNextFrame = function () {
 		requestAnimationFrame(animate, view);
 	}
@@ -104,12 +104,20 @@ function startPlasma(ui,view,config) {
 		animate();
 	});
 
+	view.on('resize', function () {
+        w = view.width;
+        h = view.height;
+        w2 = w;
+        h2 = h;
+	});
+
 	console.log("Requesting animation frame");
 
 	requestAnimationFrame(setup, view);
 
 	// handle closing of viewport
 	view.on('close',function() {
+	    requestNextFrame = null;
 	});
 }
 
@@ -119,8 +127,8 @@ if (typeof document != "undefined") {
 	//h = window.innerHeight * window.devicePixelRatio;
 	w = window.innerWidth;
 	h = window.innerHeight;
-	w2 = w/2;
-	h2 = h/2;
+	w2 = w;
+	h2 = h;
 
 	console.log("width, height: " + w + ", " + h);
 

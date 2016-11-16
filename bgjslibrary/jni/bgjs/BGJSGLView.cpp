@@ -35,7 +35,7 @@ static void checkGlError(const char* op) {
 #endif
 }
 
-BGJSGLView::BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip) :
+BGJSGLView::BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip, int width, int height) :
 		BGJSView(isolate, ctx, pixelRatio, doNoClearOnFlip) {
 
 	_firstFrameRequest = 0;
@@ -46,7 +46,7 @@ BGJSGLView::BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixel
 	LOGD("egl version %s", eglVersion);
 	// bzero (_frameRequests, sizeof(_frameRequests));
 
-	context2d = new BGJSCanvasContext(500, 500);
+	context2d = new BGJSCanvasContext(width, height);
 	context2d->backingStoreRatio = pixelRatio;
 #ifdef DEBUG
 	LOGI("pixel Ratio %f", pixelRatio);

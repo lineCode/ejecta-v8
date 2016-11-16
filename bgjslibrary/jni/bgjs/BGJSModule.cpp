@@ -25,8 +25,8 @@ std::string BGJSModule::getName() const {
 
 void BGJSModule::doRegister (v8::Isolate* isolate, const BGJSContext* context) {
 	BGJSModule::_bgjscontext = context;
-	BGJSModule::_context.Set(isolate, context->_context.Get(isolate));
-	BGJSModule::_global.Set(isolate, context->_global.Get(isolate));
+	BGJSModule::_context = context->_context;
+	// BGJSModule::_global.Set(isolate, context->_global.Get(isolate));
 }
 
 BGJSModule::~BGJSModule() {

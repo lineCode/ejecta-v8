@@ -75,9 +75,9 @@ public class DemoDetailFragment extends Fragment implements V8Engine.V8EngineHan
 
         final float density = getResources().getDisplayMetrics().density;
         final View jsView = (View)mView;
-        final int width = (int)(jsView.getWidth() / density);
-        final int height = (int)(jsView.getHeight() / density);
-        ClientAndroid.init(mV8Engine.getNativePtr(), jsId, (int)(width * mScale), (int)(height * mScale), mScriptCb);
+        final int width = (int)(jsView.getWidth());
+        final int height = (int)(jsView.getHeight());
+        ClientAndroid.init(mV8Engine.getNativePtr(), jsId, width, height, mScriptCb);
     }
 
     protected void createGLView() {

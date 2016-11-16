@@ -143,12 +143,11 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	BGJSContext* context = (BGJSContext*)ctxPtr;
 
 	Isolate* isolate = context->getIsolate();
+	v8::Locker l(isolate);
 	Isolate::Scope isolateScope(isolate);
-    v8::Locker l(isolate);
     HandleScope scope(isolate);
 
-	Local<Context> v8Context = context->_context.Get(isolate);
-	Context::Scope context_scope(v8Context);
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
 
 	const char *nativeString = NULL;
 

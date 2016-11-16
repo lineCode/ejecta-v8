@@ -17,7 +17,7 @@ typedef struct __tagAnimationFrameRequest {
 
 class BGJSGLView : public BGJSView {
 public:
-	BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip);
+	BGJSGLView(v8::Isolate* isolate, const BGJSContext *ctx, float pixelRatio, bool doNoClearOnFlip, int width, int height);
 	virtual ~BGJSGLView();
 	virtual void prepareRedraw();
 	virtual void endRedraw();

@@ -530,7 +530,7 @@ abstract public class V8TextureView extends TextureView implements TextureView.S
      * @return pointer to JNI object
      */
     protected long createGL () {
-        return ClientAndroid.createGL(V8Engine.getInstance().getNativePtr(), this, mScaling, false);
+        return ClientAndroid.createGL(V8Engine.getInstance().getNativePtr(), this, mScaling, true, getMeasuredWidth(), getMeasuredHeight());
     }
 
 	/**
