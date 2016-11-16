@@ -9,6 +9,16 @@
 
 using namespace v8;
 
+/**
+ * AjaxModule
+ * AJAX BGJS extension
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
+// TODO: This might benefit from being converted to use BGJSJavaWrapper
+
 AjaxModule::AjaxModule() : BGJSModule ("ajax") {
 }
 
@@ -21,12 +31,7 @@ void AjaxModule::doRequire (v8::Isolate* isolate, v8::Handle<v8::Object> target)
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 
-	// Handle<Object> exports = Object::New();
 	Handle<FunctionTemplate> ft = FunctionTemplate::New(isolate, ajax);
-
-	// NODE_SET_METHOD(exports, "ajax", this->makeStaticCallableFunc(ajax));
-	/* exports->Set(String::New("ajax"), ft->GetFunction());
-	exports->Set(String::New("bla"), String::New("test")); */
 
 	target->Set(String::NewFromUtf8(isolate, "exports"), ft->GetFunction());
 }
@@ -50,9 +55,6 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
-
-	/* Local<StackTrace> str = StackTrace::CurrentStackTrace(15);
-	LogStackTrace(str); */
 
 	HandleScope scope(isolate);
 
@@ -118,9 +120,6 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			"doAjaxRequest", "(Ljava/lang/String;JJJLjava/lang/String;Ljava/lang/String;Z)V");
 	assert(ajaxMethod);
 	assert(clazz);
-	/* std::stringstream str;
-	 str << "Clazz " << clazz << ", " << urlStr << ", " << dataStr << ", cbPers" << (jint)&callbackPers;
-	 LOGI(str.str().c_str()); */
 	env->CallStaticVoidMethod(clazz, ajaxMethod, urlStr,
 			(jlong) callbackPers, (jlong) thisObj, (jlong) errorPers, dataStr, methodStr, (jboolean)processData);
 

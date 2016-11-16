@@ -21,6 +21,14 @@ import ag.boersego.bgjs.data.AjaxRequest;
 import ag.boersego.bgjs.data.V8UrlCache;
 import okhttp3.OkHttpClient;
 
+/**
+ * v8Engine
+ * This class handles all lifetime and thread-related data around a v8 instance.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ **/
+
 public class V8Engine extends Thread implements Handler.Callback {
 
 	protected static V8Engine mInstance;

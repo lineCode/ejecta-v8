@@ -21,6 +21,13 @@
 #include <set>
 
 #include <mallocdebug.h>
+/**
+ * BGJSContext
+ * Manages a v8 context and exposes script load and execute functions
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
 
 class BGJSGLView;
 

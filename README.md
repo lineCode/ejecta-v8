@@ -8,6 +8,10 @@ cross-platform Canvas-based JS application this is for - if you have a web
 application or your JS code accesses the DOM in any way a WebView will be a
 better choice.
 
+You can download the sample app from Play Store: https://play.google.com/store/apps/details?id=ag.boersego.bgjs.sample
+
+Ejecta-v8 is published under the MIT Open Source License (http://opensource.org/licenses/mit-license.php), as is Ejecta.
+
 This library needs a precompiled, statically linked version of v8 to link
 against. Currently this is tested against 5.4.500.36 (the latest stable
 version as of the time of writing). See also *Updating v8*.
@@ -19,10 +23,12 @@ version as of the time of writing). See also *Updating v8*.
 2. Unpack into bgjslibrary/jni/libs.
 
 The folder should look like this:
-```# pwd
+```bash
+# pwd
 ~/git/ejecta-v8/bgjslibrary/jni/libs
 # ls
-arm64-v8a   armeabi-v7a x86         x86_64```
+arm64-v8a   armeabi-v7a x86         x86_64
+```
 
 
 ## Building v8 from sources
@@ -59,6 +65,9 @@ Steps 8-14 can be repeated as mentioned for each ABI you want to support. Step 8
 
 # Building the sample
 
+Set up NDK r13 and make sure it is in the search path.
+
+cd bgjslibrary/jni
 ndk-build
 ./gradlew assembleDebug
 

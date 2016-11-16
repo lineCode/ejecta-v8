@@ -1,6 +1,14 @@
 #ifndef __BGJS_JNIEXT_H
 #define __BGJS_JNIEXT_H  1
 
+/**
+ * jniext
+ * Header declaring all JNI exported methods
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ */
+
 extern "C" {
 	// ClientAndroid
 	JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(

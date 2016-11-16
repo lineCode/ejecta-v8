@@ -8,6 +8,14 @@ using namespace v8;
 
 const BGJSContext* BGJSModule::_bgjscontext = NULL;
 
+/**
+ * BGJSModule
+ * Base class for an ejecta-v8 extension.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif

@@ -22,7 +22,14 @@
 
 using namespace v8;
 
-// v8::Eternal<v8::Context> BGJSInfo::_context;
+/**
+ * BGJSGLModule
+ * Canvas BGJS extension. This is the glue between Ejectas Canvas and OpenGL draw code, BGJSGLViews context handling and v8.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 
 #define CREATE_ESCAPABLE_CONTEXT    	v8::Isolate* isolate = Isolate::GetCurrent(); \
 EscapableHandleScope scope(isolate);

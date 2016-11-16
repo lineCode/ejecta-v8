@@ -5,6 +5,14 @@
 
 #include "../ejecta/EJCanvas/EJCanvasContext.h"
 
+/**
+ * BGJSCanvasContext
+ * Manages a JS Canvas object and its OpenGL state. Loosely based on EJCanvasContext
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 typedef struct {
 	float clipY1,clipY2;
 } BGJSCanvasState;

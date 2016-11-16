@@ -1,8 +1,9 @@
 /**
- *    Z   z                                  //////////////_            Anteater
- *          Z   O               __\\\\@   //^^        _-    \///////      eats
- *       Z    z   o       _____((_     \-/ ____/ /   {   { \\       }     ants
- *                  o    0__________\\\---//____/----//__|-^\\\\\\\\
+ * BGJSContext
+ * Manages a v8 context and exposes script load and execute functions
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
  */
 
 #include "BGJSContext.h"
