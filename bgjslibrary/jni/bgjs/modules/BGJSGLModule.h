@@ -5,6 +5,14 @@
 #include "../BGJSModule.h"
 
 
+/**
+ * BGJSGLModule
+ * Canvas BGJS extension. This is the glue between Ejectas Canvas and OpenGL draw code, BGJSGLViews context handling and v8.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ * Licensed under the MIT license.
+ */
+
 class BGJSGLModule : public BGJSModule {
 	bool initialize();
 	~BGJSGLModule();

@@ -3,6 +3,14 @@
 
 #include <stdio.h>
 
+/**
+ * os-unix.h
+ * OS-independance wrapper for POSIX compliant OSses. Unfinished.
+ *
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
+ *
+ */
+
 #define LOG_DEBUG	1
 #define LOG_INFO	2
 #define LOG_ERROR	3

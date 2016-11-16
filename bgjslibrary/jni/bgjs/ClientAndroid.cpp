@@ -1,15 +1,9 @@
-/*/*
+/**
+ * ClientAndroid
+ * The bridge between v8 and Android.
  *
- *    Z   z                                  //////////////_               the
- *          Z   O               __\\\\@   //^^        _-    \///////    sleeping
- *       Z    z   o       _____((_     \-/ ____/ /   {   { \\       }     ant
- *                  o    0__________\\\---//____/----//__|-^\\\\\\\\     eater
+ * Copyright 2014 Kevin Read <me@kevin-read.com> and BörseGo AG (https://github.com/godmodelabs/ejecta-v8/)
  *
- * Project Myrmecophaga - the rabid anteater taking a powernap
- *
- * Author: Kevin Read
- *
- * Copyright 2012 Boerse Go AG
  */
 
 #include <android/log.h>
