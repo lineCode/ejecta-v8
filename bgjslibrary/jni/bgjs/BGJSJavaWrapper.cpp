@@ -34,6 +34,16 @@ void BGJSJavaWrapper::cleanUp(JNIEnv* env) {
 		_javaObject = NULL;
 	}
 	BGJS_CLEAR_PERSISTENT(_jsObject);
+	for (std::vector<Persistent<Function>*>::iterator it = _v8FuncsPersisted.begin(); it != _v8FuncsPersisted.end(); ++it) {
+        LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+        Persistent<Function>* resetMe = *it;
+		BGJS_CLEAR_PERSISTENT((*resetMe));
+	}
+	for (std::vector<Persistent<Object>*>::iterator it = _v8ObsPersisted.begin(); it != _v8ObsPersisted.end(); ++it) {
+        LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+        Persistent<Object>* resetMe = *it;
+		BGJS_CLEAR_PERSISTENT((*resetMe));
+	}
 }
 /*
 extern "C" {
@@ -423,6 +433,7 @@ bool BGJSJavaWrapper::jsValToJavaVal (char spec, jvalue &jv, Local<Value> &arg, 
 				Local<v8::Function> callback = Local<Function>::Cast(arg);
 				Persistent<Function>* thisFn = new Persistent<Function>(Isolate::GetCurrent(), callback);
 				BGJS_NEW_PERSISTENT_PTR(thisFn);
+				_v8FuncsPersisted.push_back(thisFn);
 				jlong thisPtr = (jlong)(thisFn);
 				jv.j = thisPtr;
 				break;
@@ -562,6 +573,7 @@ void BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaMethodName
 			}
 			Persistent<Object>* thisObj = new Persistent<Object>(isolate, args.This());
 			BGJS_NEW_PERSISTENT_PTR(thisObj);
+			_v8ObsPersisted.push_back(thisObj);
 			jlong thisPtr = (jlong)(thisObj);
 			jv.j = thisPtr;
 			javaArgs[javaIndex] = jv;

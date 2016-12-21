@@ -23,9 +23,13 @@ public class V8BackedJavaClass {
 	@Override
 	protected void finalize() throws Throwable {
         super.finalize();
-		if (mNativePtr != 0) {
-			ClientAndroid.cleanupNativeFnPtr(mNativePtr);
-			mNativePtr = 0;
-		}
+        cleanup();
+	}
+
+	public void cleanup() {
+        if (mNativePtr != 0) {
+            ClientAndroid.cleanupNativeFnPtr(mNativePtr);
+            mNativePtr = 0;
+        }
 	}
 }

@@ -15,6 +15,8 @@
 
 class BGJSJavaWrapper {
 	jclass _jStringClass;
+	std::vector<v8::Persistent<v8::Object>*> _v8ObsPersisted;
+	std::vector<v8::Persistent<v8::Function>*> _v8FuncsPersisted;
 public:
 	v8::Persistent<v8::Object> _jsObject;
 	BGJSJavaWrapper ();

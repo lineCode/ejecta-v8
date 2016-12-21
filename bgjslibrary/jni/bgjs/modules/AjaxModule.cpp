@@ -49,6 +49,7 @@ AjaxModule::~AjaxModule() {
 void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Isolate* isolate = args.GetIsolate();
 	v8::Locker l(isolate);
+	Isolate::Scope isolateScope(isolate);
 	if (args.Length() < 1) {
 		LOGE("Not enough parameters for ajax");
 		isolate->ThrowException(v8::Exception::ReferenceError(v8::String::NewFromUtf8(isolate, "Not enough parameters for ajax")));
@@ -57,6 +58,7 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 
 	HandleScope scope(isolate);
+	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(AjaxModule::_bgjscontext->_context));
 
 	Local<v8::Object> options = args[0]->ToObject();
 
