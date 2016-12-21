@@ -14,6 +14,7 @@ import ag.boersego.bgjs.ClientAndroid;
 import ag.boersego.bgjs.V8Engine;
 import ag.boersego.bgjs.V8TextureView;
 import ag.boersego.bgjs.sample.dummy.DummyContent;
+import okhttp3.OkHttpClient;
 
 /**
  * A fragment representing a single Demo detail screen.
@@ -53,6 +54,7 @@ public class DemoEjectaFragment extends Fragment implements V8Engine.V8EngineHan
         super.onAttach(a);
 
         mV8Engine = V8Engine.getInstance();
+        mV8Engine.setHttpClient(new OkHttpClient());
 
         mV8Engine.addStatusHandler(this);
     }

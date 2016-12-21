@@ -130,7 +130,8 @@ function startPlasma(ui,view,config) {
 	    'error':function(e) {
 	        console.error("ajax error", e);
 	    },
-	    'url':"http://heise.de/"
+	    'url':"http://heise.de/",
+	    'processData': false
 	});
 }
 
