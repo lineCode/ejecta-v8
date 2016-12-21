@@ -321,6 +321,12 @@ void find_and_replace(std::string& source, std::string const& find, std::string 
 }
 
 void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	// Path in args is relative and may contain /./STH.js and ../FOLDER/STH.js
+	// ie current folder and parent folder
+
+	// This method will take the current working directory (from embedderdata or
+	// in older V8 from Context->GetData() which were set by the last call to require())
+	// and this relative path and return an absolute path
 	if (args.Length() < 1) {
 	    args.GetReturnValue().SetUndefined();
 		return;
@@ -331,17 +337,19 @@ void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args)
 	v8::Locker l(isolate);
 	EscapableHandleScope scope(isolate);
 
+	// Get the relative path from the first argument
 	Local<String> filename = args[0]->ToString();
 
 	String::Utf8Value basename(filename);
 
-	// Catch errors
 	TryCatch try_catch;
 	std::string baseNameStr = std::string(*basename);
 
+	// Get absolute current working directory from current V8 context
 	Local<Value> dirVal = isolate->GetEnteredContext()->GetEmbedderData(1);
 	Local<String> dirName;
 	if (dirVal->IsUndefined()) {
+		// We don't have a cwd so assume /js
 		dirName = String::NewFromUtf8(isolate, "js");
 	} else {
 		dirName = dirVal->ToString();
@@ -363,12 +371,15 @@ void BGJSContext::normalizePath(const v8::FunctionCallbackInfo<v8::Value>& args)
 		args.GetReturnValue().Set(scope.Escape(filename));
 		return;
 	}
+	// Append cwd and input path
 	std::string pathName;
 	std::string pathTemp = std::string(*dirNameC).append("/").append(baseNameStr);
+	// Remote /./ which is /
 	find_and_replace(pathTemp, std::string("/./"), std::string("/"));
 #ifdef DEBUG
 	LOGD("Pathtemp %s", pathTemp.c_str());
 #endif
+	// Now flatten /../ into one absolute path
 	pathName = normalize_path(pathTemp);
 	Local<String> normalizedPath = String::NewFromUtf8(isolate, pathName.c_str());
 
@@ -709,8 +720,8 @@ void BGJSContext::unregisterGLView(BGJSGLView* view) {
 }
 
 bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
-    Isolate::Scope isolateScope(_isolate);
 	v8::Locker l(_isolate);
+    Isolate::Scope isolateScope(_isolate);
 	HandleScope scope(_isolate);
 
 	// Context::Scope context_scope(BGJSContext::_context.Get(_isolate));
