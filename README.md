@@ -53,7 +53,7 @@ For steps 1 and 2 see also the [v8 project documentation](https://github.com/v8/
 10. Go into output folder: `cd out.gn/arm.debug/obj`
 11. Create a static archive from the resulting object files: `$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-ar rcvs libv8.a v8/*.o v8_base/*.o v8_libbase/*.o v8_libsampler/*.o v8_nosnapshot/*.o v8_libplatform/*.o v8_libsampler/*.o`
 ..* For arm64, use `$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-ar rcvs libv82.a v8/*.o v8_base/*.o v8_libbase/*.o v8_libsampler/*.o v8_nosnapshot/*.o v8_libplatform/*.o v8_libsampler/*.o`
-..* For x86 or x64 use `$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-ar rcvs libv82.a v8/*.o v8_base/*.o v8_libbase/*.o v8_libsampler/*.o v8_nosnapshot/*.o v8_libplatform/*.o v8_libsampler/*.o`
+..* For x86 or x64 use `$ANDROID_NDK_HOME/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-ar rcvs libv82.a v8/*.o v8_base/*.o v8_libbase/*.o v8_libsampler/*.o v8_nosnapshot/*.o v8_libplatform/*.o v8_libsampler/*.o`
 12. Optionally strip debug symbols. I have never gotten meaningful stack
 traces out of these anyway, and it speeds linking times up considerably and
 saves about one GB of space per ABI: `$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-strip --strip-debug libv8.a`
