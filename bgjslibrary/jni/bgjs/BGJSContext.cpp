@@ -732,7 +732,9 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 	AnimationFrameRequest *request;
 	int index = view->_firstFrameRequest, nextIndex = view->_nextFrameRequest,
 			startFrame = view->_firstFrameRequest;
+#ifdef DEBUG
 	LOGD("runAnimation %d to %d", view->_firstFrameRequest, view->_nextFrameRequest);
+#endif
 	while (index != nextIndex) {
 		request = &(view->_frameRequests[index]);
 
@@ -740,7 +742,7 @@ bool BGJSContext::runAnimationRequests(BGJSGLView* view) const  {
 			didDraw = true;
 			request->view->prepareRedraw();
 			Handle<Value> args[0];
-			LOGD("BGJSC runAnimation call");
+			// LOGD("BGJSC runAnimation call");
 			Handle<Value> result = Local<Object>::New(_isolate, request->callback)->CallAsFunction(
 					Local<Object>::New(_isolate, request->thisObj), 0, args);
 
