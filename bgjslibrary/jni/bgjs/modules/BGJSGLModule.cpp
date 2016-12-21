@@ -15,8 +15,8 @@
 
 #include "../jniext.h"
 
-#define DEBUG 1
-// #undef DEBUG
+// #define DEBUG 1
+#undef DEBUG
 
 #define LOG_TAG "BGJSGLModule"
 

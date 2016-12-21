@@ -35,12 +35,12 @@ void BGJSJavaWrapper::cleanUp(JNIEnv* env) {
 	}
 	BGJS_CLEAR_PERSISTENT(_jsObject);
 	for (std::vector<Persistent<Function>*>::iterator it = _v8FuncsPersisted.begin(); it != _v8FuncsPersisted.end(); ++it) {
-        LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+        // LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
         Persistent<Function>* resetMe = *it;
 		BGJS_CLEAR_PERSISTENT((*resetMe));
 	}
 	for (std::vector<Persistent<Object>*>::iterator it = _v8ObsPersisted.begin(); it != _v8ObsPersisted.end(); ++it) {
-        LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+        // LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
         Persistent<Object>* resetMe = *it;
 		BGJS_CLEAR_PERSISTENT((*resetMe));
 	}
