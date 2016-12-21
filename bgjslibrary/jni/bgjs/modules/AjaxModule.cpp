@@ -138,15 +138,21 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jstring dataStr, jint responseCode,
 		jlong jsCbPtr, jlong thisPtr, jlong errorCb, jboolean success, jboolean processData) {
-
 	BGJSContext* context = (BGJSContext*)ctxPtr;
 
 	Isolate* isolate = context->getIsolate();
+
 	v8::Locker l(isolate);
+	
 	Isolate::Scope isolateScope(isolate);
+	LOGD("ajaxDone callback1");
+
     HandleScope scope(isolate);
+    LOGD("ajaxDone callback2");
+
 
 	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
+	LOGD("ajaxDone callback3");
 
 	const char *nativeString = NULL;
 
@@ -160,10 +166,12 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	}
 	Persistent<Function>* callbackP = static_cast<Persistent<Function>*>((void*)jsCbPtr);
 
-	// LOGD("ajaxDone thisObj %p local %p errorP %p callbackP %p processData %i data %p", thisObj, thisObjLocal, errorP, callbackP, processData, dataStr);
+	LOGD("ajaxDone thisObj %p local %p errorP %p callbackP %p processData %i data %p", thisObj, thisObjLocal, errorP, callbackP, processData, dataStr);
 
 	Handle<Value> argarray[1];
 	int argcount = 1;
+
+	LOGD("ajaxDone callback4");
 
 	if (dataStr == 0) {
 		argarray[0] = v8::Null(isolate);
