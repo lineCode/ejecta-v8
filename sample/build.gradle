@@ -51,6 +51,32 @@ android {
     }
 }
 
+
+/*
+// This snippet makes gradle not strip the embedded libraries anymore so we can debug v8
+tasks.whenTaskAdded { task ->
+
+    if (task.name.startsWith('transformNative_libsWithStripDebugSymbolFor')) {
+        task.finalizedBy copyUnstripedJniLibTask
+    }
+}
+
+task copyUnstripedJniLibTask() << {
+
+    def destDirRoot = new File(projectDir, "build/intermediates/transforms/stripDebugSymbol/debug/folders/")
+    if (!destDirRoot.isDirectory()) return
+
+    def destDir = destDirRoot
+    def srcDir = new File(destDirRoot.getAbsolutePath().replace("stripDebugSymbol", "mergeJniLibs"))
+
+    println "Copying unstriped jni libs ..."
+    println "    from ${srcDir}"
+    println "    to ${destDir}"
+
+    // Copy the unstripped so files to overwrite the striped ones.
+    FileUtils.copyDirectory(srcDir, destDir)
+} */
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:24.+'

@@ -9,3 +9,4 @@ bgjsandroid.sublime-workspace
 .gradle/*
 bgjslibrary/.externalNativeBuild
 local.properties
+bgjslibrary/v8src
