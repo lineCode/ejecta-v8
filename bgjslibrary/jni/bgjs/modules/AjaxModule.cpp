@@ -58,7 +58,6 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 
 	HandleScope scope(isolate);
-	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(AjaxModule::_bgjscontext->_context));
 
 	Local<v8::Object> options = args[0]->ToObject();
 
@@ -119,11 +118,12 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	jclass clazz = env->FindClass("ag/boersego/bgjs/V8Engine");
 	jmethodID ajaxMethod = env->GetStaticMethodID(clazz,
-			"doAjaxRequest", "(Ljava/lang/String;JJJLjava/lang/String;Ljava/lang/String;Z)V");
+			"doAjaxRequest", "(Ljava/lang/String;JJJJLjava/lang/String;Ljava/lang/String;Z)V");
 	assert(ajaxMethod);
 	assert(clazz);
 	env->CallStaticVoidMethod(clazz, ajaxMethod, urlStr,
-			(jlong) callbackPers, (jlong) thisObj, (jlong) errorPers, dataStr, methodStr, (jboolean)processData);
+			(jlong) callbackPers, (jlong) thisObj, (jlong) errorPers, 
+			(jlong)(new Persistent<Context>(isolate, isolate->GetCurrentContext())), dataStr, methodStr, (jboolean)processData);
 
 #endif
 
@@ -134,12 +134,12 @@ void AjaxModule::ajax(const v8::FunctionCallbackInfo<v8::Value>& args) {
 extern "C" {
 JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jstring data, jint responseCode, jlong cbPtr,
-		jlong thisPtr, jlong errorCb, jboolean success, jboolean processData);
+		jlong thisPtr, jlong errorCb, jlong v8CtxPtr, jboolean success, jboolean processData);
 };
 
 JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 		JNIEnv * env, jobject obj, jlong ctxPtr, jstring dataStr, jint responseCode,
-		jlong jsCbPtr, jlong thisPtr, jlong errorCb, jboolean success, jboolean processData) {
+		jlong jsCbPtr, jlong thisPtr, jlong errorCb, jlong v8CtxPtr, jboolean success, jboolean processData) {
 	BGJSContext* context = (BGJSContext*)ctxPtr;
 
 	Isolate* isolate = context->getIsolate();
@@ -152,8 +152,13 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
     HandleScope scope(isolate);
     LOGD("ajaxDone callback2");
 
+    Persistent<Context>* v8ContextPers = static_cast<Persistent<Context>*>((void*)v8CtxPtr);
+    Local<Context> v8Context = Local<Context>::New(isolate, *v8ContextPers);
 
-	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
+
+	Context::Scope context_scope(v8Context);
+	// Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(context->_context));
+
 	LOGD("ajaxDone callback3");
 
 	const char *nativeString = NULL;
@@ -161,7 +166,7 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	TryCatch trycatch;
 
 	Persistent<Object>* thisObj = static_cast<Persistent<Object>*>((void*)thisPtr);
-	Local<Object> thisObjLocal = (*reinterpret_cast<Local<Object>*>(thisObj));
+	Local<Object> thisObjLocal = Local<Object>::New(isolate, *thisObj);
 	Persistent<Function>* errorP;
 	if (errorCb) {
 		errorP = static_cast<Persistent<Function>*>((void*)errorCb);
@@ -173,7 +178,7 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	Handle<Value> argarray[1];
 	int argcount = 1;
 
-	LOGD("ajaxDone callback4");
+	LOGD("ajaxDone callback4 success %i", (int)success);
 
 	if (dataStr == 0) {
 		argarray[0] = v8::Null(isolate);
@@ -196,7 +201,7 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	LOGD("ajaxDone callback");
 
 	if (success) {
-		result = (*reinterpret_cast<Local<Function>*>(callbackP))->Call(thisObjLocal, argcount, argarray);
+		result = Local<Function>::New(isolate, *callbackP)->Call(thisObjLocal, argcount, argarray);
 	} else {
 		if (!errorP->IsEmpty()) {
 			result = (*reinterpret_cast<Local<Function>*>(errorP))->Call(thisObjLocal, argcount, argarray);
@@ -211,6 +216,7 @@ JNIEXPORT bool JNICALL Java_ag_boersego_bgjs_ClientAndroid_ajaxDone(
 	if (nativeString) {
 		env->ReleaseStringUTFChars(dataStr, nativeString);
 	}
+	BGJS_CLEAR_PERSISTENT_PTR(v8ContextPers);
 	BGJS_CLEAR_PERSISTENT_PTR(callbackP);
 	BGJS_CLEAR_PERSISTENT_PTR(thisObj);
 	BGJS_CLEAR_PERSISTENT_PTR(errorP);
