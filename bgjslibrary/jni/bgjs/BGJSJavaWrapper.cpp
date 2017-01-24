@@ -20,6 +20,8 @@ using namespace v8;
 #endif
 #define LOG_TAG "BGJSJavaWrapper"
 
+#define DEBUG	1
+
 BGJSJavaWrapper::BGJSJavaWrapper() {
 
 }
@@ -30,19 +32,41 @@ BGJSJavaWrapper::~BGJSJavaWrapper () {
 
 void BGJSJavaWrapper::cleanUp(JNIEnv* env) {
 	if (_javaObject != NULL) {
+#ifdef DEBUG
+		LOGD("cleanUp. Cleaning up javaObj global ref %p", _javaObject);
+#endif
 		env->DeleteGlobalRef(_javaObject);
+#ifdef DEBUG
+		LOGD("cleanUp. Cleaned up javaObj global ref %p", _javaObject);
+#endif
 		_javaObject = NULL;
 	}
+#ifdef DEBUG
+	LOGD("cleanUp. Cleaning up jsObject pers");
+#endif
 	BGJS_CLEAR_PERSISTENT(_jsObject);
+#ifdef DEBUG
+	LOGD("cleanUp. Cleaned up jsObject pers");
+#endif
 	for (std::vector<Persistent<Function>*>::iterator it = _v8FuncsPersisted.begin(); it != _v8FuncsPersisted.end(); ++it) {
-        // LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+#ifdef DEBUG
+        LOGD("BGJSJavaWrapper cleanUp func callback %p", *it);
+#endif
         Persistent<Function>* resetMe = *it;
 		BGJS_CLEAR_PERSISTENT((*resetMe));
+#ifdef DEBUG
+		LOGD("BGJSJavaWrapper cleaned func callback %p", *it);
+#endif
 	}
 	for (std::vector<Persistent<Object>*>::iterator it = _v8ObsPersisted.begin(); it != _v8ObsPersisted.end(); ++it) {
-        // LOGD("BGJSJavaWrapper cleanUp callbacks %p", *it);
+#ifdef DEBUG
+        LOGD("BGJSJavaWrapper cleanUp obj callback %p", *it);
+#endif
         Persistent<Object>* resetMe = *it;
 		BGJS_CLEAR_PERSISTENT((*resetMe));
+#ifdef DEBUG
+		LOGD("BGJSJavaWrapper cleaned obj callback %p", *it);
+#endif
 	}
 }
 /*
