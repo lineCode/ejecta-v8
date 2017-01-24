@@ -834,8 +834,8 @@ void BGJSContext::js_global_setTz(Local<String> property, Local<Value> value,
 void BGJSContext::js_global_requestAnimationFrame(
 		const v8::FunctionCallbackInfo<v8::Value>& args) {
     BGJSContext *ctx = BGJSInfo::_jscontext;
-	v8::Locker l(ctx->getIsolate());
-	HandleScope scope(ctx->getIsolate());
+	v8::Locker l(args.GetIsolate());
+	HandleScope scope(args.GetIsolate());
 
 
 	if (args.Length() >= 2 && args[0]->IsFunction() && args[1]->IsObject()) {
@@ -892,8 +892,8 @@ void BGJSContext::js_global_setInterval(const v8::FunctionCallbackInfo<v8::Value
 void BGJSContext::setTimeoutInt(const v8::FunctionCallbackInfo<v8::Value>& args,
 		bool recurring) {
     BGJSContext *ctx = BGJSInfo::_jscontext;
-	v8::Locker l(ctx->getIsolate());
-	HandleScope scope(ctx->getIsolate());
+	v8::Locker l(args.GetIsolate());
+	HandleScope scope(args.GetIsolate());
 
 
 	if (args.Length() == 2 && args[0]->IsFunction() && args[1]->IsNumber()) {
@@ -987,7 +987,7 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
 	v8::Locker l(isolate);
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
-	Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(BGJSContext::_context));
+	// Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(BGJSContext::_context));
 
 	LOGD("load. Current context %p", isolate->GetCurrentContext());
 
