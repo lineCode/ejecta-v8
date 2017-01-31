@@ -103,7 +103,7 @@ public class AjaxRequest implements Runnable {
     }
 	
 	protected URI mUrl;
-	protected String mData;
+	protected byte[] mData;
 	protected AjaxListener mCaller;
 	protected Object mDataObject;
 	private Object mAdditionalData;
@@ -140,13 +140,17 @@ public class AjaxRequest implements Runnable {
 		} else {
 			mUrl = new URI(targetURL);
 		}
-		mData = data;
+		if (data != null) {
+            mData = data.getBytes();
+        }
 		mCaller = caller;
 	}
 
 	public AjaxRequest(String url, String data, AjaxListener caller,
 			String method) throws URISyntaxException {
-		mData = data;
+        if (data != null) {
+            mData = data.getBytes();
+        }
 		mCaller = caller;
 		if (method == null) {
 			method = "GET";
@@ -239,7 +243,7 @@ public class AjaxRequest implements Runnable {
             }
 
 			if (mResultBuilder != null) {
-				mData = mResultBuilder.toString();
+				mData = mResultBuilder.toString().getBytes();
 			}
 			if (mData != null) {
                 if (mOutputType != null) {
