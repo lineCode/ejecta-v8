@@ -384,7 +384,8 @@ public class V8Engine extends Thread implements Handler.Callback {
 	}
 
 	public class V8AjaxRequest implements AjaxRequest.AjaxListener {
-		private AjaxRequest mReq;
+        private final long mV8CtxPtr;
+        private AjaxRequest mReq;
 		private long mCbPtr;
 		private long mThisObj;
 		private boolean mSuccess;
@@ -393,18 +394,20 @@ public class V8Engine extends Thread implements Handler.Callback {
 		private long mErrorCb;
 		private boolean mProcessData;
 
-		public V8AjaxRequest(String url, long jsCallbackPtr, long thisObj, long errorCb,
+		public V8AjaxRequest(String url, long jsCallbackPtr, long thisObj, long errorCb, long v8ContextPtr,
 				String data, String method, boolean processData) {
 			mCbPtr = jsCallbackPtr;
 			mThisObj = thisObj;
 			mErrorCb = errorCb;
+			mV8CtxPtr = v8ContextPtr;
 			mSuccess = false;
 			mProcessData = processData;
 			try {
 				mReq = new AjaxRequest(url, data, this, method);
 			} catch (URISyntaxException e) {
 				Log.e(TAG, "Cannot create URL", e);
-				ClientAndroid.ajaxDone(mNativePtr, null, 500, mCbPtr, mThisObj, mErrorCb, false, mProcessData);
+				ClientAndroid.ajaxDone(mNativePtr, null, 500, mCbPtr, mThisObj, mErrorCb, mV8CtxPtr, false, mProcessData);
+                return;
 			}
 			mReq.setCacheInstance(mCache);
             mReq.setHttpClient(mHttpClient);
@@ -438,7 +441,7 @@ public class V8Engine extends Thread implements Handler.Callback {
 						+ mThisObj + " for code " + mCode + ", thread "
 						+ Thread.currentThread().getId());
 			}
-			ClientAndroid.ajaxDone(mNativePtr, mData, mCode, mCbPtr, mThisObj, mErrorCb, mSuccess, mProcessData);
+			ClientAndroid.ajaxDone(mNativePtr, mData, mCode, mCbPtr, mThisObj, mErrorCb, mV8CtxPtr, mSuccess, mProcessData);
 		}
 
 		public void success(String data, int code, AjaxRequest r) {
@@ -454,9 +457,9 @@ public class V8Engine extends Thread implements Handler.Callback {
 		}
 	}
 
-	public static void doAjaxRequest(String url, long jsCb, long thisObj, long errorCb,
+	public static void doAjaxRequest(String url, long jsCb, long thisObj, long errorCb, long v8ContextPtr,
 			String data, String method, boolean processData) {
-		V8AjaxRequest req = mInstance.new V8AjaxRequest(url, jsCb, thisObj, errorCb,
+		V8AjaxRequest req = mInstance.new V8AjaxRequest(url, jsCb, thisObj, errorCb, v8ContextPtr,
 				data, method, processData);
 		if (DEBUG) {
 			Log.d(TAG, "Preparing to do ajax request on thread "

@@ -19,7 +19,8 @@ public class ClientAndroid {
     public static native void runCBBoolean (long ctxPtr, long cbPtr, long thisPtr, boolean b);
 	
     // AjaxModule
-	public static native boolean ajaxDone(long ctxPtr, String data, int responseCode, long jsCbPtr, long thisObj, long errorCb, boolean success, boolean processData);
+	public static native boolean ajaxDone(long ctxPtr, String data, int responseCode, long jsCbPtr, long thisObj,
+                                          long errorCb, long v8CtxPtr, boolean success, boolean processData);
 	
 	// BGJSGLModule
     public static native long createGL(long ctxPtr, V8TextureView gl2jniView, float pixelRatio, boolean noClearOnFlip, int width, int height);
