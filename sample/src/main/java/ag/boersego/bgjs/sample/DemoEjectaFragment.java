@@ -139,9 +139,15 @@ public class DemoEjectaFragment extends Fragment implements V8Engine.V8EngineHan
                 }
             };
         } */
-        View v = (View) mView;
+        final View v = (View) mView;
 
-        mRootView.addView(v, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        mRootView.post(new Runnable() {
+            @Override
+            public void run() {
+                mRootView.addView(v, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+        });
+
     }
 
     @Override

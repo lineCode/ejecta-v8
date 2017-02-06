@@ -1,4 +1,4 @@
-APP_ABI := armeabi-v7a x86 x86_64 arm64-v8a
+APP_ABI := armeabi-v7a x86
 #APP_ABI := arm64-v8a
 #APP_STL := gnustl_static
 APP_STL := c++_static
