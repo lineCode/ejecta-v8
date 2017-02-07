@@ -176,8 +176,6 @@ void BGJSContext::CloneObject(Handle<Object> recv, Handle<Value> source,
 		this->cloneObjectMethod.Reset(Isolate::GetCurrent(), cloneObjectMethod_);
 	}
 
-	LOGD("BGJSContext cloneObject call");
-
 	Local<Function>::New(Isolate::GetCurrent(), this->cloneObjectMethod)->Call(recv, 2, args);
 }
 
@@ -239,7 +237,7 @@ Handle<Value> BGJSContext::callFunction(Isolate* isolate, Handle<Object> recv, c
 
 	Local<Function> fn = Handle<Function>::Cast(recv->Get(String::NewFromUtf8(isolate, name)));
 			String::Utf8Value value(fn);
-	LOGD("BGJSContext callFunction call");
+	
 	Local<Value> result = fn->Call(recv, argc, argv);
 	if (result.IsEmpty()) {
 		LOGE("callFunction exception");
@@ -570,7 +568,6 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	// Enter the context
 	{
 		Context::Scope embeddedContext(context);
-		// LOGD("require entering context %p", context);
 
 		sandbox->Set(dirNameStr, String::NewFromUtf8(isolate, basePath.c_str()));
 	#ifdef DEBUG
@@ -593,9 +590,6 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			if (scriptR.IsEmpty()) {
 
 				context->DetachGlobal();
-				// context->Exit();
-				// LOGD("require leaving context1 %p", context);
-				// contextPersistent.Reset();
 
 				// FIXME UGLY HACK TO DISPLAY SYNTAX ERRORS.
 				BGJSContext::ReportException(&try_catch);
@@ -611,8 +605,6 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			result = scriptR->Run();
 			if (result.IsEmpty()) {
 				context->DetachGlobal();
-				// LOGD("require leaving context2 %p", context);
-				// context->Exit();
 				BGJS_CLEAR_PERSISTENT(contextPersistent);
 				/* ReThrow doesn't re-throw TerminationExceptions; a null exception value
 				 * is re-thrown instead (see Isolate::PropagatePendingExceptionToExternalTryCatch())
@@ -631,8 +623,6 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			LOGE("Cannot find file %s", *basename);
 			log(LOG_ERROR, args);
 			context->DetachGlobal();
-			// LOGD("require leaving context3 %p", context);
-			// context->Exit();
 			BGJS_CLEAR_PERSISTENT(contextPersistent);
 			args.GetReturnValue().SetUndefined();
 			return;
@@ -644,8 +634,6 @@ void BGJSContext::require(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		// Clean up, clean up, everybody everywhere!
 	}
 	context->DetachGlobal();
-	// LOGD("require leaving context4 %p", context);
-	// context->Exit();
 	BGJS_CLEAR_PERSISTENT(contextPersistent);
 	if (buf) {
 		free((void*) buf);
@@ -783,7 +771,6 @@ void BGJSContext::js_global_getLocale(Local<String> property,
 	BGJSContext *ctx = BGJSInfo::_jscontext;
 
 	if (ctx->_jscontext->_locale) {
-		// LOGD("Returning locale %s", ctx->_jscontext->_locale);
 		info.GetReturnValue().Set(scope.Escape(String::NewFromUtf8(Isolate::GetCurrent(), ctx->_jscontext->_locale)));
 	} else {
 	    info.GetReturnValue().SetNull();
@@ -801,7 +788,6 @@ void BGJSContext::js_global_getLang(Local<String> property,
 	BGJSContext *ctx = BGJSInfo::_jscontext;
 
 	if (ctx->_jscontext->_lang) {
-		// LOGD("Returning lang %s", ctx->_jscontext->_lang);
 		info.GetReturnValue().Set(scope.Escape(String::NewFromUtf8(Isolate::GetCurrent(), ctx->_jscontext->_lang)));
 	} else {
 		info.GetReturnValue().SetNull();
@@ -819,7 +805,6 @@ void BGJSContext::js_global_getTz(Local<String> property,
 	BGJSContext *ctx = BGJSInfo::_jscontext;
 
 	if (ctx->_jscontext->_tz) {
-		// LOGD("Returning tz %s", ctx->_jscontext->_tz);
 		info.GetReturnValue().Set(scope.Escape(String::NewFromUtf8(Isolate::GetCurrent(), ctx->_jscontext->_tz)));
 	} else {
 		info.GetReturnValue().SetNull();
@@ -1209,14 +1194,12 @@ int BGJSContext::run() {
 	// Run the android.js file
 	v8::Persistent<v8::Script, v8::CopyablePersistentTraits<v8::Script> > res = load("js/android.js");
 	BGJS_NEW_PERSISTENT(res);
-    LOGI("run: Script loaded");
 	if (res.IsEmpty()) {
 		LOGE("Cannot find android.js");
 		return 0;
 	}
-    LOGD("run: Script creating");
+
 	Handle<Value> result = Local<Script>::New(this->_isolate, res)->Run();
-    LOGD("run: Script created");
 	BGJS_CLEAR_PERSISTENT(res);
 
 	if (result.IsEmpty()) {
@@ -1224,10 +1207,8 @@ int BGJSContext::run() {
 		ReportException(&try_catch);
 		return false;
 	}
-    LOGD("run: Script starting");
 	// Run the script to get the result.
 	result = Local<Script>::New(this->_isolate, _script)->Run();
-    LOGD("run: Script started");
 
 	if (result.IsEmpty()) {
 		// Print errors that happened during execution.

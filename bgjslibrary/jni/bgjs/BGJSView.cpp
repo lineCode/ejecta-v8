@@ -97,7 +97,7 @@ void BGJSView::js_view_on(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Locker l(isolate);
     HandleScope scope(isolate);
 	BGJSView *view = externalToClassPtr<BGJSView>(args.Data());
-	LOGD("BGJSView.on: BGJSView instance is %p", view);
+	
 	if (args.Length() == 2 && args[0]->IsString() && args[1]->IsObject()) {
 		Handle<Object> func = args[1]->ToObject();
 		if (func->IsFunction()) {
@@ -132,7 +132,7 @@ BGJSView::BGJSView(Isolate* isolate, const BGJSContext *ctx, float pixelRatio, b
 
 	//  new JS BGJSView object
 	this->_jsContext = ctx;
-	LOGD("BGJSView context is %p", ctx);
+	
 	v8::Local<v8::ObjectTemplate> bgjsgl = v8::ObjectTemplate::New(isolate);
 	// bgjsglft->SetClassName(String::NewFromUtf8(isolate, "BGJSView"));
 	// v8::Local<v8::ObjectTemplate> bgjsgl = bgjsglft->InstanceTemplate();
@@ -166,7 +166,6 @@ Handle<Value> BGJSView::startJS(Isolate* isolate, const char* fnName,
 	}
 
 	Local<Object> objInstance = (*reinterpret_cast<Local<ObjectTemplate>*>(&this->jsViewOT))->NewInstance();
-	LOGD("startJS. jsContext %p, jsC->c %p, objInstance %p configJson %s", this->_jsContext, BGJSInfo::_context, objInstance, configJson ? configJson : "null");
 	objInstance->SetInternalField(0, External::New(isolate, reinterpret_cast<void *>(this)));
 	// Local<Object> instance = bgjsglft->GetFunction()->NewInstance();
 	BGJS_RESET_PERSISTENT(isolate, this->_jsObj, objInstance);
@@ -211,16 +210,13 @@ void BGJSView::sendEvent(Isolate* isolate, Handle<Object> eventObjRef) {
 
 		Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = _cbEvent[i];
 
-		LOGD("BGJSView sendEvent call");
-
-
-		// if (!cb->isEmpty()) {
+		if (!cb->isEmpty()) {
 		    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
 			Handle<Value> result = callback->CallAsFunction(callback, 1, args);
 			if (result.IsEmpty()) {
 				BGJSContext::ReportException(&trycatch);
 			}
-		// }
+		}
 	}
 }
 
@@ -235,7 +231,7 @@ void BGJSView::call(Isolate* isolate, std::vector<Persistent<Object, v8::Copyabl
 	for (std::vector<Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >*>::size_type i = 0; i < count; i++) {
 	    Persistent<Object, v8::CopyablePersistentTraits<v8::Object> >* cb = list[i];
 	    Local<Object> callback = (*reinterpret_cast<Local<Object>*>(cb));
-	    LOGD("BGJSView call call");
+
 		Local<Value> result = callback->CallAsFunction(callback, 0, args);
 		if (result.IsEmpty()) {
 			BGJSContext::ReportException(&trycatch);
