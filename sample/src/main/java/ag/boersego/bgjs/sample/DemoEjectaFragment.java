@@ -83,40 +83,45 @@ public class DemoEjectaFragment extends Fragment implements V8Engine.V8EngineHan
     }
 
     protected void createGLView() {
+
         // We need to wait until both our parent view and the v8Engine are ready
         if (mRootView == null || !mEngineReady) {
             return;
         }
 
-        Log.d(TAG, "Creating GL view and calling callback " + mScriptCb);
+        mRootView.post(new Runnable() {
+            @Override
+            public void run() {
 
-        if (Build.VERSION.SDK_INT > 10) {
-            // HC and up have TextureVew
-            final V8TextureView tv = new V8TextureView(getActivity(), mScriptCb, "") {
+                Log.d(TAG, "Creating GL view and calling callback " + mScriptCb);
 
-                @Override
-                public void onGLCreated(long jsId) {
-                    initializeV8(jsId);
-                }
+                if (Build.VERSION.SDK_INT > 10) {
+                    // HC and up have TextureVew
+                    final V8TextureView tv = new V8TextureView(getActivity(), mScriptCb, "") {
 
-                @Override
-                public void onGLRecreated(long jsId) {
-                    onGLCreated(jsId);
-                }
+                        @Override
+                        public void onGLCreated(long jsId) {
+                            initializeV8(jsId);
+                        }
 
-                @Override
-                public void onGLCreateError(Exception ex) {
-                    Log.d (TAG, "OpenGL error", ex);
-                }
+                        @Override
+                        public void onGLRecreated(long jsId) {
+                            onGLCreated(jsId);
+                        }
 
-                @Override
-                public void onRenderAttentionNeeded(long jsId) {
+                        @Override
+                        public void onGLCreateError(Exception ex) {
+                            Log.d (TAG, "OpenGL error", ex);
+                        }
 
-                }
-            };
-            tv.doDebug(true);
-            mView = tv;
-        } /* else {
+                        @Override
+                        public void onRenderAttentionNeeded(long jsId) {
+
+                        }
+                    };
+                    tv.doDebug(true);
+                    mView = tv;
+                } /* else {
             mView = new V8GLSurfaceView(getActivity(), "viewCreated", "") {
                 @Override
                 public void onGLCreated(int jsId) {
@@ -139,11 +144,8 @@ public class DemoEjectaFragment extends Fragment implements V8Engine.V8EngineHan
                 }
             };
         } */
-        final View v = (View) mView;
+                final View v = (View) mView;
 
-        mRootView.post(new Runnable() {
-            @Override
-            public void run() {
                 mRootView.addView(v, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             }
         });
