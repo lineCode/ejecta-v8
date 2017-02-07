@@ -33,6 +33,6 @@ public class ClientAndroid {
 	public static native void close(long ctxPtr, long jsPtr);
 
     // BGJSModule
-    public static native void cleanupNativeFnPtr (long nativePtr);
-    public static native void cleanupPersistentFunction (long nativePtr);
+    public static native void cleanupNativeFnPtr (long ctxPtr, long nativePtr);
+    public static native void cleanupPersistentFunction (long ctxPtr, long nativePtr);
 }

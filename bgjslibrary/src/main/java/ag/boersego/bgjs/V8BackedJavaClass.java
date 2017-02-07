@@ -28,7 +28,7 @@ public class V8BackedJavaClass {
 
 	public synchronized void cleanup() {
         if (mNativePtr != 0) {
-            ClientAndroid.cleanupNativeFnPtr(mNativePtr);
+            ClientAndroid.cleanupNativeFnPtr(V8Engine.getCachedInstance().getNativePtr(), mNativePtr);
             mNativePtr = 0;
         }
 	}

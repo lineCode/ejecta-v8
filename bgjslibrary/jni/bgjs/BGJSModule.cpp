@@ -78,19 +78,23 @@ void BGJSModule::javaToJsField (v8::Isolate* isolate, const char* fieldName,
 }
 
 extern "C" {
-	JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (JNIEnv * env, jobject obj, jlong nativePtr);
-	JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong nativePtr);
+	JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (JNIEnv * env, jobject obj, jlong ctxPtr, jlong nativePtr);
+	JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong ctxPtr, jlong nativePtr);
 }
 
-JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (JNIEnv * env, jobject obj, jlong nativePtr) {
+JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupNativeFnPtr (JNIEnv * env, jobject obj, jlong ctxPtr, jlong nativePtr) {
 	if (nativePtr) {
+		BGJSContext* context = (BGJSContext*)ctxPtr;
+	    v8::Isolate* isolate = context->getIsolate();
+	    v8::Locker l (isolate);
+		Isolate::Scope isolateScope(isolate);
 		BGJSJavaWrapper* wrapper = (BGJSJavaWrapper*)nativePtr;
 		// wrapper->cleanUp(env);
 		delete (wrapper);
 	}
 }
 
-JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong nativePtr) {
+JNIEXPORT void JNICALL Java_ag_boersego_bgjs_ClientAndroid_cleanupPersistentFunction (JNIEnv * env, jobject obj, jlong ctxPtr, jlong nativePtr) {
 	if (nativePtr) {
 		Persistent<Function, v8::CopyablePersistentTraits<v8::Function> > func = *(((Persistent<Function, v8::CopyablePersistentTraits<v8::Function> >*)nativePtr));
 		BGJS_CLEAR_PERSISTENT(func);

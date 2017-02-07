@@ -28,11 +28,15 @@
     #define BGJS_NEW_PERSISTENT_PTR(persistent) LOGD("BGJS_PERS_NEW_PTR %p file %s line %i func %s", persistent, __FILE__, __LINE__, __func__);
     #define BGJS_NEW_PERSISTENT(persistent) LOGD("BGJS_PERS_NEW %p file %s line %i func %s", &persistent, __FILE__, __LINE__, __func__);
 
-    #define BGJS_CLEAR_PERSISTENT(pers) LOGD("BGJS_PERS_RESET %p file %s line %i func %s", &pers, __FILE__, __LINE__, __func__); \
-    pers.Reset();
+    #define BGJS_CLEAR_PERSISTENT(pers) if (!pers.IsEmpty()) { \
+        LOGD("BGJS_PERS_RESET %p file %s line %i func %s", &pers, __FILE__, __LINE__, __func__); \
+        pers.Reset(); \
+    }
 
-    #define BGJS_CLEAR_PERSISTENT_PTR(pers) LOGD("BGJS_PERS_RESET %p file %s line %i func %s", pers, __FILE__, __LINE__, __func__); \
-    pers->Reset();
+    #define BGJS_CLEAR_PERSISTENT_PTR(pers) if (!pers->IsEmpty()) { \
+        LOGD("BGJS_PERS_RESET %p file %s line %i func %s", pers, __FILE__, __LINE__, __func__); \
+        pers->Reset(); \
+    }
 
 #else
     #define BGJS_RESET_PERSISTENT(isolate, pers, data) pers.Reset(isolate, data);
@@ -40,9 +44,9 @@
     #define BGJS_NEW_PERSISTENT_PTR(persistent) 
     #define BGJS_NEW_PERSISTENT(persistent) 
 
-    #define BGJS_CLEAR_PERSISTENT(pers) pers.Reset();
+    #define BGJS_CLEAR_PERSISTENT(pers) if (!pers.IsEmpty()) {  pers.Reset(); }
 
-    #define BGJS_CLEAR_PERSISTENT_PTR(pers) pers->Reset();
+    #define BGJS_CLEAR_PERSISTENT_PTR(pers) if (!pers->IsEmpty()) { pers->Reset(); }
 #endif
 
 
