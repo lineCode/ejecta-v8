@@ -555,6 +555,12 @@ void BGJSJavaWrapper::jsToJava (const char *argsSpec, const char* javaMethodName
 		LOGD ("jsToJava: Cannot create local stack frame");
 		env->ExceptionClear();
 	}
+
+	if (_javaObject == NULL) {
+		LOGE("We have no global object ref, maybe out of memory situation?");
+		args.GetReturnValue().SetUndefined();
+		return;
+	}
 	char errBuf[512];
 
 	jvalue* javaArgs = (jvalue*)malloc (sizeof(jvalue) * argCount);
