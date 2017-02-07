@@ -278,7 +278,7 @@ JNIEXPORT jlong JNICALL Java_ag_boersego_bgjs_ClientAndroid_initialize(
     LOGI("Initialized createParams");
     v8::Isolate* isolate = v8::Isolate::New(create_params);
     v8::Locker l (isolate);
-	isolate->Enter();
+	v8::Isolate::Scope isolateScope(isolate);
     LOGD("Initialized Isolate %p", isolate);
     // v8::Isolate::Scope isolate_scope(isolate);
     // LOGD("Initialized isolateScope");

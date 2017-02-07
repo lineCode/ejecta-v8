@@ -985,23 +985,18 @@ Persistent<Script, CopyablePersistentTraits<Script> > BGJSContext::load(const ch
     Isolate *isolate = this->_isolate;
     LOGI("Load: got Isolate %p", isolate);
 	v8::Locker l(isolate);
+	Isolate::Scope isolateScope(isolate);
     HandleScope scope(isolate);
 	v8::TryCatch try_catch;
-	// Context::Scope context_scope(*reinterpret_cast<Local<Context>*>(BGJSContext::_context));
-
-	LOGD("load. Current context %p", isolate->GetCurrentContext());
 
 	const char* buf = this->_client->loadFile(path);
-	LOGD("BGJSContext::load file loaded %p", buf);
 
 	// Create a string containing the JavaScript source code.
 	Handle<String> source = String::NewFromUtf8(isolate, buf);
 
 	// Compile the source code.
 	Handle<Script> scr = Script::Compile(source);
-	LOGD("BGJSContext::load file compiled");
 	Persistent<Script, CopyablePersistentTraits<Script> > pers(isolate, scr);
-	LOGD("BGJSContext::load file persisted");
 
 	if (scr.IsEmpty()) {
 		LOGE("Error compiling script %s\n", buf);
